@@ -6,10 +6,6 @@
 #
 # Licensed under the MIT License
 
-"""MQT Bench.
-
-This file is part of the MQT Bench Benchmark library released under the MIT license.
-See README.md or go to https://github.com/munich-quantum-toolkit/bench for more information.
-"""
+"""MQT Bench Benchmarks."""
 
 from __future__ import annotations
