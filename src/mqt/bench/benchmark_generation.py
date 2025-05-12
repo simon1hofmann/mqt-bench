@@ -14,7 +14,7 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, TypedDict, overload
 
-from qiskit import QuantumCircuit, transpile
+from qiskit.compiler import transpile
 
 from .devices import get_available_device_names, get_device_by_name, get_native_gateset_by_name
 from .output import (
@@ -24,6 +24,8 @@ from .output import (
 
 if TYPE_CHECKING:  # pragma: no cover
     from types import ModuleType
+
+    from qiskit.circuit import QuantumCircuit
 
     from .devices import Device, Gateset
 
