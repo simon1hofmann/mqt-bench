@@ -173,8 +173,8 @@ class Device(ABC):
         Thus, such edges are removed from the coupling map.
 
         It is ensured that
-         * all single-qubit gates have fidelity data for all qubits in the device
-         * all two-qubit gates have fidelity data for all qubit pairs in the coupling map.
+        - all single-qubit gates have fidelity data for all qubits in the device
+        - all two-qubit gates have fidelity data for all qubit pairs in the coupling map.
         This is accomplished by substituting the missing fidelity data with the average fidelity for the gate.
         """
         self.check_calibration()

@@ -46,14 +46,27 @@ with:
     :members: CompilerSettings, QiskitSettings
 ```
 
-- `gateset`: `"ibm_falcon"`, `"ibm_heron_r1"`, `"rigetti"`, `"ionq"`, `"iqm"`, `"oqc"`, or `"quantinuum"` (required for "nativegates" level)
-- `device_name`: `"ibm_washington"`, `"ibm_montreal"`, `"rigetti_aspen_m3"`, `"ionq_harmony"`, `"ionq_aria1"`, `"oqc_lucy"`, or `"quantinuum_h2"` (required for "mapped" level)
+- `gateset`:
 
-## Quantum Circuit Compiler Support
+```{code-cell} ipython3
+:tags: [hide-input]
+from mqt.bench.devices import get_available_native_gatesets
 
-At the moment, one compiler is supported:
+print(", ".join([gateset.name for gateset in get_available_native_gatesets()]))
+```
 
-1. [Qiskit](https://qiskit.org/documentation/) with the compiler settings: Optimization level 0 to 3
+(required for "nativegates" level)
+
+- `device_name`:
+
+```{code-cell} ipython3
+:tags: [hide-input]
+from mqt.bench.devices import get_available_devices
+
+print(", ".join([device.name for device in get_available_devices()]))
+```
+
+(required for "mapped" level)
 
 ## Native Gate-Set Support
 

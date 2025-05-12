@@ -72,7 +72,7 @@ modindex_common_prefix = ["mqt.bench."]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "typing_extensions": ("https://typing-extensions.readthedocs.io/en/latest/", None),
-    "qiskit": ("https://qiskit.org/documentation/", None),
+    "qiskit": ("https://quantum.cloud.ibm.com/docs/de/api/qiskit", None),
     "mqt": ("https://mqt.readthedocs.io/en/latest/", None),
 }
 
