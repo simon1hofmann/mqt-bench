@@ -31,15 +31,8 @@ MQT Bench is available via [PyPI](https://pypi.org/project/mqt.bench/)
 (venv) $ pip install mqt.bench
 ```
 
-To generate a benchmark circuit, use the `get_benchmark` method:
-
-```{eval-rst}
-.. automodule:: mqt.bench.benchmark_generation
-    :members: get_benchmark
-    :no-index:
-```
-
-The available parameters are described on the {doc}`parameter space description page <Parameter>` and the algorithms are described on the {doc}`algorithm page <Benchmark_selection>`.
+To generate a benchmark circuit, use the {func}`~.mqt.bench.get_benchmark` method.
+The available parameters are described on the {doc}`parameter space description page <parameter>` and the algorithms are described on the {doc}`algorithm page <benchmark_selection>`.
 For example, in order to obtain the _5_-qubit Deutsch-Josza benchmark on algorithm level, use the following:
 
 ```{code-cell} ipython3
@@ -49,7 +42,7 @@ qc = get_benchmark("dj", "alg", 5)
 qc.draw(output="mpl")
 ```
 
-Examples can be found in the {doc}`Quickstart` jupyter notebook.
+Examples can be found in the {doc}`quickstart` jupyter notebook.
 
 ## Usage directly via this repository
 

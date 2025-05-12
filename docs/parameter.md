@@ -13,38 +13,16 @@ mystnb:
 
 # Parameter Space
 
-The `mqt.bench.get_benchmark` method has the following signature:
+The {func}`~mqt.bench.get_benchmark` function has the following signature:
 
-```{eval-rst}
-.. automodule:: mqt.bench.benchmark_generation
-    :no-index:
-    :members: get_benchmark
-```
-
-- `benchmark_name` (see {doc}`details <Benchmark_selection>`) : `"ae"`, `"bv"`, `"dj"`, `"grover-noancilla"`, `"grover-v-chain"`, `"ghz"`, `"graphstate"`,
+- `benchmark_name` (see {doc}`details <benchmark_selection>`) : `"ae"`, `"bv"`, `"dj"`, `"grover-noancilla"`, `"grover-v-chain"`, `"ghz"`, `"graphstate"`,
   `"qaoa"`, `"qft"`, `"qftentangled"`, `"qnn"`, `"qpeexact"`, `"qpeinexact"`,
   `"qwalk-noancilla"`, `"qwalk-v-chain"`, `"randomcircuit"`, `"vqerealamprandom"`, `"vqesu2random"`, `"vqetwolocalrandom"`,
   `"wstate"`, `"shor"`
 - `level`: `0` or `"alg"`, `1` or `"indep"`, `2` or `"nativegates"`, `3` or `"mapped"`
 - `circuit_size`: for most of the cases this is equal to number of qubits
   (all scalable benchmarks except `"qwalk-v-chain"` and `"grover-v-chain"`) while for all other the qubit number is higher
-- `compiler_settings`: Optimization level for `"qiskit"` (`0`-`3`), exemplary shown:
-
-```python
-from mqt.bench import CompilerSettings, QiskitSettings
-
-compiler_settings = CompilerSettings(
-    qiskit=QiskitSettings(optimization_level=1),
-)
-```
-
-with:
-
-```{eval-rst}
-.. automodule:: mqt.bench.benchmark_generation
-    :no-index:
-    :members: CompilerSettings, QiskitSettings
-```
+- `compiler_settings`: Optimization level for `"qiskit"` (`0`-`3`)
 
 - `gateset`:
 
@@ -92,4 +70,4 @@ for num, device in enumerate(get_available_devices()):
     print(f"{num+1}: {device.name} with {device.num_qubits} qubits")
 ```
 
-Examples how to use the `get_benchmark` method for all four abstraction levels can be found on the {doc}`Quickstart jupyter notebook <Quickstart>`.
+Examples how to use the {func}`~.mqt.bench.get_benchmark` method for all four abstraction levels can be found on the {doc}`Quickstart jupyter notebook <quickstart>`.
