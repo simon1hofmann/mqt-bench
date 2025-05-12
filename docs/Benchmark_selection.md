@@ -1,33 +1,32 @@
-Supported Benchmark Algorithms
-==============================
+# Supported Benchmark Algorithms
 
 So far, the following benchmarks are implemented and provided:
 
+- Amplitude Estimation
+- Bernstein-Vazirani
+- Deutsch-Jozsa
+- GHZ State
+- Graph State
+- Grover's (no ancilla)
+- Grover's (v-chain)
+- Quantum Fourier Transformation (QFT)
+- QFT Entangled
+- Quantum Neural Network (QNN)
+- Quantum Phase Estimation (QPE) Exact
+- Quantum Phase Estimation (QPE) Inexact
+- Quantum Walk (no ancilla)
+- Quantum Walk (-chain)
+- Random Circuit
+- Shor's
+- VQE-ansätze with random values:
+  - Efficient SU2 ansatz with Random Parameters
+  - Real Amplitudes ansatz with Random Parameters
+  - Two Local ansatz with Random Parameters
+- W-State
 
-* Amplitude Estimation
-* Bernstein-Vazirani
-* Deutsch-Jozsa
-* GHZ State
-* Graph State
-* Grover's (no ancilla)
-* Grover's (v-chain)
-* Quantum Fourier Transformation (QFT)
-* QFT Entangled
-* Quantum Neural Network (QNN)
-* Quantum Phase Estimation (QPE) Exact
-* Quantum Phase Estimation (QPE) Inexact
-* Quantum Walk (no ancilla)
-* Quantum Walk (-chain)
-* Random Circuit
-* Shor's
-* VQE-ansätze with random values:
-  * Efficient SU2 ansatz with Random Parameters
-  * Real Amplitudes ansatz with Random Parameters
-  * Two Local ansatz with Random Parameters
-* W-State
+The attached mappings between shortened `benchmark_name` parameter and actual benchmarks are:
 
-The attached mappings between shortened ``benchmark_name`` parameter and actual benchmarks are:
-
+```{eval-rst}
 .. list-table::
    :header-rows: 1
 
@@ -70,9 +69,11 @@ The attached mappings between shortened ``benchmark_name`` parameter and actual 
    * - ``"vqesu2random"``
      - Efficient SU2 ansatz with Random Parameters
    * - ``"vqetwolocalrandom"``
+     - Two-local ansatz with Random Parameters
    * - ``"wstate"``
      - W-State
    * - ``"shor"``
      - Shor's
+```
 
-See the `benchmark description <https://www.cda.cit.tum.de/mqtbench/benchmark_description>`_ for further details on the individual benchmarks.
+See the [benchmark description](https://www.cda.cit.tum.de/mqtbench/benchmark_description) for further details on the individual benchmarks.
