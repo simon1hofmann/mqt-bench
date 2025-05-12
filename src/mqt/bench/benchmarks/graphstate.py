@@ -6,7 +6,7 @@
 #
 # Licensed under the MIT License
 
-"""Graophstate benchmark definition."""
+"""Graphstate benchmark definition."""
 
 from __future__ import annotations
 
