@@ -32,17 +32,16 @@ Ready to contribute to the project? Here is how to set up a local development en
    > $ python3 -m venv venv
    > $ source venv/bin/activate
    > ```
-   >
-   > :::{note}
-   > If you are using Windows, you can use the following command instead:
-   >
-   > ```console
-   > $ python3 -m venv venv
-   > $ venv\Scripts\activate.bat
-   > ```
-   >
-   > :::
-   >
+
+   ````{note}
+   If you are using Windows, you can use the following command instead:
+
+   ```console
+   $ python3 -m venv venv
+   $ venv\Scripts\activate.bat
+   ```
+   ````
+
    > Ensure that pip, setuptools, and wheel are up to date:
    >
    > ```console
