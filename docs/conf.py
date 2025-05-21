@@ -76,6 +76,10 @@ intersphinx_mapping = {
     "mqt": ("https://mqt.readthedocs.io/en/latest/", None),
 }
 
+myst_enable_extensions = [
+    "colon_fence",
+]
+
 nb_execution_mode = "cache"
 
 autosectionlabel_prefix_document = True
