@@ -109,7 +109,6 @@ filterwarnings = [
     'ignore:.*invalid value encountered in det.*:RuntimeWarning:',
     'ignore:.*invalid value encountered in divide.*:RuntimeWarning:',
     'ignore:.*The iteration is not making good progress.*:RuntimeWarning:',
-    'ignore:.*is pending deprecation as of qiskit 1.3..*:PendingDeprecationWarning:', # Warnings that should be fixed by us in a subsequent PR.
 ]
 
 [tool.coverage]

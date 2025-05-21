@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import numpy as np
 from qiskit.circuit import QuantumCircuit
-from qiskit.circuit.library import RealAmplitudes, ZZFeatureMap
+from qiskit.circuit.library import real_amplitudes, z_feature_map
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
@@ -21,8 +21,8 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
     Arguments:
         num_qubits: number of qubits of the returned quantum circuit
     """
-    feature_map = ZZFeatureMap(feature_dimension=num_qubits)
-    ansatz = RealAmplitudes(num_qubits=num_qubits, reps=1)
+    feature_map = z_feature_map(feature_dimension=num_qubits)
+    ansatz = real_amplitudes(num_qubits=num_qubits, reps=1)
 
     qc = QuantumCircuit(num_qubits)
     feature_map = feature_map.assign_parameters([1 for _ in range(feature_map.num_parameters)])
