@@ -81,20 +81,8 @@ $ uv add mqt.bench
 ```toml
 [project]
 # ...
-dependencies = ["mqt.bench>=1.1.9"]
+dependencies = ["mqt.bench>=2.0.0"]
 # ...
-```
-
-:::
-
-:::{tab-item} setup.py
-
-```python
-from setuptools import setup
-
-setup(
-    # ...
-    install_requires=["mqt.bench>=1.1.9"],
     # ...
 )
 ```

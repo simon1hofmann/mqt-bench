@@ -77,7 +77,11 @@ intersphinx_mapping = {
 }
 
 myst_enable_extensions = [
+    "amsmath",
     "colon_fence",
+    "substitution",
+    "deflist",
+    "dollarmath",
 ]
 
 nb_execution_mode = "cache"
