@@ -35,6 +35,8 @@ abstraction_levels
 parameter
 benchmark_selection
 references
+CHANGELOG
+UPGRADING
 ```
 
 ```{toctree}
