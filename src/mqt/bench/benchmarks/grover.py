@@ -11,18 +11,12 @@
 from __future__ import annotations
 
 import numpy as np
-from packaging.version import Version
-from qiskit import version
 from qiskit.circuit import AncillaRegister, QuantumCircuit, QuantumRegister
 
-if Version(version.get_version_info()) >= Version("1.3.2"):
-    from qiskit.circuit.library import grover_operator
-else:
-    from qiskit.circuit.library import GroverOperator
-
-    def grover_operator(oracle: QuantumCircuit) -> GroverOperator:
-        """Return a Grover operator (Qiskit < 1.3.2)."""
-        return GroverOperator(oracle)
+try:
+    from qiskit.circuit.library.grover_operator import grover_operator
+except ImportError:
+    from qiskit.circuit.library import GroverOperator as grover_operator  # noqa: N813
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:

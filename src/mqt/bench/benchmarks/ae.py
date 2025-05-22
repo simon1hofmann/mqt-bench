@@ -11,18 +11,12 @@
 from __future__ import annotations
 
 import numpy as np
-from packaging.version import Version
-from qiskit import version
 from qiskit.circuit import QuantumCircuit
 
-if Version(version.get_version_info()) >= Version("1.3.2"):
-    from qiskit.circuit.library import phase_estimation
-else:
-    from qiskit.circuit.library import PhaseEstimation
-
-    def phase_estimation(num_eval: int, grover: QuantumCircuit) -> PhaseEstimation:
-        """PhaseEstimation (Qiskit < 1.3.2)."""
-        return PhaseEstimation(num_eval, grover)
+try:
+    from qiskit.circuit.library.phase_estimation import phase_estimation
+except ImportError:
+    from qiskit.circuit.library import PhaseEstimation as phase_estimation  # noqa: N813
 
 
 def create_circuit(num_qubits: int, probability: float = 0.2) -> QuantumCircuit:

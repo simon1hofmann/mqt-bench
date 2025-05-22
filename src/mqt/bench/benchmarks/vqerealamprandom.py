@@ -13,17 +13,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from packaging.version import Version
-from qiskit import version
 
-if Version(version.get_version_info()) >= Version("1.3.2"):
+try:
     from qiskit.circuit.library import real_amplitudes
-else:
-    from qiskit.circuit.library import RealAmplitudes
-
-    def real_amplitudes(num_qubits: int, entanglement: str = "full", reps: int = 3) -> RealAmplitudes:
-        """RealAmplitudes (Qiskit < 1.3.2)."""
-        return RealAmplitudes(num_qubits, entanglement=entanglement, reps=reps)
+except ImportError:
+    from qiskit.circuit.library import RealAmplitudes as real_amplitudes  # noqa: N813
 
 
 if TYPE_CHECKING:  # pragma: no cover
