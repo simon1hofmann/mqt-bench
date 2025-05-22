@@ -13,7 +13,30 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qiskit.circuit.library import TwoLocal
+from packaging.version import Version
+from qiskit import version
+
+if Version(version.get_version_info()) >= Version("1.3.2"):
+    from qiskit.circuit.library import n_local
+else:
+    from qiskit.circuit.library import TwoLocal
+
+    def n_local(
+        num_qubits: int,
+        rotation_blocks: str = "ry",
+        entanglement_blocks: str = "cx",
+        entanglement: str = "full",
+        reps: int = 3,
+    ) -> TwoLocal:
+        """TwoLocal (Qiskit < 1.3.2)."""
+        return TwoLocal(
+            num_qubits,
+            rotation_blocks=rotation_blocks,
+            entanglement_blocks=entanglement_blocks,
+            entanglement=entanglement,
+            reps=reps,
+        )
+
 
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit
@@ -29,7 +52,7 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
         QuantumCircuit: a quantum circuit implementing the TwoLocal ansatz with random parameter values
     """
     rng = np.random.default_rng(10)
-    qc = TwoLocal(num_qubits, "ry", "cx", entanglement="full", reps=3)
+    qc = n_local(num_qubits, "ry", "cx", entanglement="full", reps=3)
     num_params = qc.num_parameters
     qc = qc.assign_parameters(2 * np.pi * rng.random(num_params))
     qc.measure_all()

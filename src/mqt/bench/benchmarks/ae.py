@@ -11,8 +11,18 @@
 from __future__ import annotations
 
 import numpy as np
+from packaging.version import Version
+from qiskit import version
 from qiskit.circuit import QuantumCircuit
-from qiskit.circuit.library import PhaseEstimation
+
+if Version(version.get_version_info()) >= Version("1.3.2"):
+    from qiskit.circuit.library import phase_estimation
+else:
+    from qiskit.circuit.library import PhaseEstimation
+
+    def phase_estimation(num_eval: int, grover: QuantumCircuit) -> PhaseEstimation:
+        """PhaseEstimation (Qiskit < 1.3.2)."""
+        return PhaseEstimation(num_eval, grover)
 
 
 def create_circuit(num_qubits: int, probability: float = 0.2) -> QuantumCircuit:
@@ -45,7 +55,7 @@ def create_circuit(num_qubits: int, probability: float = 0.2) -> QuantumCircuit:
     num_eval_qubits = num_qubits - 1
 
     # Build the phase estimation circuit with the specified number of evaluation qubits and the Grover operator.
-    pe = PhaseEstimation(num_eval_qubits, grover_operator)
+    pe = phase_estimation(num_eval_qubits, grover_operator)
 
     # Create the overall circuit using the quantum registers from the phase estimation circuit.
     qc = QuantumCircuit(*pe.qregs)
