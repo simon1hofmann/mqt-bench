@@ -13,7 +13,30 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qiskit.circuit.library import n_local
+from packaging.version import Version
+from qiskit import version
+
+if Version(version.get_version_info()) >= Version("1.3.2"):
+    from qiskit.circuit.library import n_local
+else:
+    from qiskit.circuit.library import TwoLocal
+
+    def n_local(
+        num_qubits: int,
+        rotation_blocks: str = "ry",
+        entanglement_blocks: str = "cx",
+        entanglement: str = "full",
+        reps: int = 3,
+    ) -> TwoLocal:
+        """TwoLocal (Qiskit < 1.3.2)."""
+        return TwoLocal(
+            num_qubits,
+            rotation_blocks=rotation_blocks,
+            entanglement_blocks=entanglement_blocks,
+            entanglement=entanglement,
+            reps=reps,
+        )
+
 
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit

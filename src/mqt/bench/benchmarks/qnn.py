@@ -11,8 +11,22 @@
 from __future__ import annotations
 
 import numpy as np
+from packaging.version import Version
+from qiskit import version
 from qiskit.circuit import QuantumCircuit
-from qiskit.circuit.library import real_amplitudes, z_feature_map
+
+if Version(version.get_version_info()) >= Version("1.3.2"):
+    from qiskit.circuit.library import real_amplitudes, z_feature_map
+else:
+    from qiskit.circuit.library import RealAmplitudes, ZZFeatureMap
+
+    def real_amplitudes(num_qubits: int, reps: int = 1) -> RealAmplitudes:
+        """RealAmplitudes (Qiskit < 1.3.2)."""
+        return RealAmplitudes(num_qubits, reps=reps)
+
+    def z_feature_map(feature_dimension: int) -> ZZFeatureMap:
+        """ZZFeatureMap (Qiskit < 1.3.2)."""
+        return ZZFeatureMap(feature_dimension=feature_dimension)
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:

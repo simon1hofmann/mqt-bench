@@ -13,7 +13,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from qiskit.circuit.library import efficient_su2
+from packaging.version import Version
+from qiskit import version
+
+if Version(version.get_version_info()) >= Version("1.3.2"):
+    from qiskit.circuit.library import efficient_su2
+else:
+    from qiskit.circuit.library import EfficientSU2
+
+    def efficient_su2(num_qubits: int, entanglement: str = "full", reps: int = 3) -> EfficientSU2:
+        """EfficientSU2 (Qiskit < 1.3.2)."""
+        return EfficientSU2(num_qubits, entanglement=entanglement, reps=reps)
+
 
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit
