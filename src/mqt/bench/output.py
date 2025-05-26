@@ -248,6 +248,9 @@ def generate_filename(
         all relevant metadata for reproducibility and clarity.
     """
     base = f"{benchmark_name}_{level}"
+    if level == "indep":
+        assert opt_level is not None
+        return f"{base}_opt{opt_level}_{num_qubits}"
     if level in {"nativegates", "mapped"}:
         assert opt_level is not None
         assert target is not None

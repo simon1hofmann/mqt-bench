@@ -463,7 +463,7 @@ def test_create_ae_circuit_with_invalid_qubit_number() -> None:
     ("level", "target", "expected"),
     [
         ("alg", None, "ghz_alg_5"),
-        ("indep", None, "ghz_indep_5"),
+        ("indep", None, "ghz_indep_opt2_5"),
         ("nativegates", get_target_for_gateset("ibm_falcon", 5), "ghz_nativegates_ibm_falcon_opt2_5"),
         ("mapped", get_device_by_name("ibm_falcon_127"), "ghz_mapped_ibm_falcon_127_opt2_5"),
     ],
