@@ -11,219 +11,209 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 import pytest
 from qiskit.transpiler import Target
 
 from mqt.bench.targets.devices import get_available_device_names, get_device
 
-
-@pytest.mark.parametrize(
-    ("device_name", "num_qubits", "expected_2q_gate"),
-    [
-        ("ibm_falcon_27", 27, "cx"),
-        ("ibm_falcon_127", 127, "cx"),
-        ("ibm_eagle_127", 127, "ecr"),
-        ("ibm_heron_133", 133, "cz"),
-        ("ibm_heron_156", 156, "cz"),
-    ],
-)
-def test_ibm_targets(device_name: str, num_qubits: int, expected_2q_gate: str) -> None:
-    """Test structure and basic gate support for IBM targets."""
-    target = get_device(device_name)
-
-    assert isinstance(target, Target)
-    assert target.description == device_name
-    assert target.num_qubits == num_qubits
-
-    # === Gate presence check ===
-    expected_1q_gates = {"sx", "rz", "x", "measure"}
-    assert expected_1q_gates.issubset(set(target.operation_names))
-    assert expected_2q_gate in target.operation_names
-
-    # === Validate available qubits for single-qubit gates
-    for gate in expected_1q_gates:
-        for (q,) in target[gate]:
-            assert isinstance(q, int)
-            # Optional: check that props are present (but allow None)
-            props = target[gate][q,]
-            assert props is not None
-
-    # === Validate two-qubit gate connections
-    for (q0, q1), props in target[expected_2q_gate].items():
-        assert isinstance(q0, int)
-        assert isinstance(q1, int)
-        assert q0 != q1
-        assert props is not None
-
-    # === Validate measure connections
-    for (q,) in target["measure"]:
-        assert isinstance(q, int)
-        props = target["measure"][q,]
-        assert props is not None
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 
-@pytest.mark.parametrize(
-    ("device_name", "entangling_gate"),
-    [
-        ("ionq_aria_25", "ms"),
-        ("ionq_forte_36", "zz"),
-    ],
-)
-def test_ionq_targets(device_name: str, entangling_gate: str) -> None:
-    """Test the structure of the IonQ targets."""
-    target = get_device(device_name)
+@dataclass(frozen=True)
+class DeviceSpec:
+    """Specification describing an expected device configuration."""
 
-    assert isinstance(target, Target)
-    assert target.description == device_name
-    assert target.num_qubits > 0
+    name: str
+    num_qubits: int | None = None
+    single_gates: set[str] = field(default_factory=set)
+    two_qubit_gates: set[str] = field(default_factory=set)
+    # If *symmetric_connectivity* is *True*, require (q1, q0) whenever (q0, q1)
+    symmetric_connectivity: Mapping[str, bool] = field(default_factory=dict)
 
-    # Check gate support
-    assert "gpi" in target.operation_names
-    assert "gpi2" in target.operation_names
-    assert entangling_gate in target.operation_names
-    assert "measure" in target.operation_names
-
-    # Single-qubit gates should have properties for all qubits
-    for op_name in ["gpi", "gpi2", "measure"]:
-        for (qubit,) in target[op_name]:
-            props = target[op_name][qubit,]
-            assert props.duration >= 0
-            assert props.error >= 0
-
-    # Two-qubit gates should have connectivity and properties
-    for (q1, q2), props in target[entangling_gate].items():
-        assert q1 != q2
-        assert props.duration > 0
-        assert props.error > 0
+    def __post_init__(self) -> None:  # pragma: no cover
+        """Ensures that all declared two-qubit gates have an associated symmetry flag."""
+        # Ensure symmetry flags are defined for all declared 2-qubit gates
+        missing = self.two_qubit_gates.difference(self.symmetric_connectivity)
+        if missing:
+            object.__setattr__(
+                self, "symmetric_connectivity", {**self.symmetric_connectivity, **dict.fromkeys(missing, False)}
+            )
 
 
-@pytest.mark.parametrize(
-    ("device_name", "num_qubits"),
-    [
-        ("iqm_crystal_5", 5),
-        ("iqm_crystal_20", 20),
-        ("iqm_crystal_54", 54),
-    ],
-)
-def test_iqm_targets(device_name: str, num_qubits: int) -> None:
-    """Test the structure of the IQM targets."""
-    target = get_device(device_name)
+def _assert_single_qubit_gate_properties(target: Target, gate_name: str, *, vendor: str) -> None:
+    if gate_name not in target.operation_names:
+        pytest.fail(f"{vendor}: expected single-qubit gate '{gate_name}' not found in target.operations")
 
-    assert isinstance(target, Target)
-    assert target.description == device_name
-    assert target.num_qubits == num_qubits
+    for (qubit,) in target[gate_name]:
+        props = target[gate_name][qubit,]
+        assert props is not None, f"{vendor}: props for '{gate_name}' on qubit {qubit} missing"
+        dur = getattr(props, "duration", None)
+        if dur is not None:
+            assert dur >= 0, f"{vendor}: negative duration for '{gate_name}' on qubit {qubit}"
+        err = getattr(props, "error", None)
+        if err is not None:
+            assert 0 <= err < 1, f"{vendor}: error outside [0,1) for '{gate_name}' on qubit {qubit}"
 
-    # Expected gate types
-    expected_ops = {"r", "cz", "measure"}
-    assert expected_ops.issubset(set(target.operation_names))
 
-    # Check single-qubit RGate properties
-    for (qubit,) in target["r"]:
-        props = target["r"][qubit,]
-        assert props.duration > 0
-        assert 0 <= props.error < 1
+def _assert_two_qubit_gate_properties(target: Target, gate_name: str, *, symmetric: bool, vendor: str) -> None:
+    if gate_name not in target.operation_names:
+        pytest.fail(f"{vendor}: expected two-qubit gate '{gate_name}' not found in target.operations")
 
-    # Check measurement properties
+    for (q0, q1), props in target[gate_name].items():
+        assert q0 != q1, f"{vendor}: identical qubits for '{gate_name}' connection ({q0}, {q1})"
+        assert props is not None, f"{vendor}: props for '{gate_name}' on ({q0}, {q1}) missing"
+        dur = getattr(props, "duration", None)
+        if dur is not None:
+            assert dur > 0, f"{vendor}: non-positive duration for '{gate_name}' on ({q0}, {q1})"
+        err = getattr(props, "error", None)
+        if err is not None:
+            assert 0 <= err < 1, f"{vendor}: error outside [0,1) for '{gate_name}' on ({q0}, {q1})"
+        if symmetric:
+            assert (
+                q1,
+                q0,
+            ) in target[gate_name], f"{vendor}: missing symmetric connection ({q1}, {q0}) for '{gate_name}'"
+
+
+def _assert_measure_properties(target: Target, *, vendor: str) -> None:
+    if "measure" not in target.operation_names:
+        pytest.fail(f"{vendor}: missing mandatory 'measure' operation")
+
     for (qubit,) in target["measure"]:
         props = target["measure"][qubit,]
-        assert props.duration > 0
-        assert 0 <= props.error < 1
-
-    # Check CZ gate symmetry and properties
-    for (q1, q2), props in target["cz"].items():
-        assert q1 != q2
-        assert props.duration > 0
-        assert 0 <= props.error < 1
-        # Also ensure the reverse pair is present (symmetry) for iqm_crystal_5
-        if device_name == "iqm_crystal_5":
-            assert (q2, q1) in target["cz"]
+        assert props is not None, f"{vendor}: measure props missing for qubit {qubit}"
+        dur = getattr(props, "duration", None)
+        if dur is not None:
+            assert dur > 0, f"{vendor}: non-positive measure duration on qubit {qubit}"
+        err = getattr(props, "error", None)
+        if err is not None:
+            assert 0 <= err < 1, f"{vendor}: measure error outside [0,1) on qubit {qubit}"
 
 
-def test_quantinuum_target() -> None:
-    """Test the structure of the Quantinuum H2 target device."""
-    target = get_device("quantinuum_h2_56")
+DEVICE_SPECS: Sequence[DeviceSpec] = [
+    # ─────────────────────────────────────────────────────────────────── IBM ──
+    DeviceSpec(
+        name="ibm_falcon_27",
+        num_qubits=27,
+        single_gates={"sx", "rz", "x", "measure"},
+        two_qubit_gates={"cx"},
+    ),
+    DeviceSpec(
+        name="ibm_falcon_127",
+        num_qubits=127,
+        single_gates={"sx", "rz", "x", "measure"},
+        two_qubit_gates={"cx"},
+    ),
+    DeviceSpec(
+        name="ibm_eagle_127",
+        num_qubits=127,
+        single_gates={"sx", "rz", "x", "measure"},
+        two_qubit_gates={"ecr"},
+    ),
+    DeviceSpec(
+        name="ibm_heron_133",
+        num_qubits=133,
+        single_gates={"sx", "rz", "x", "measure"},
+        two_qubit_gates={"cz"},
+    ),
+    DeviceSpec(
+        name="ibm_heron_156",
+        num_qubits=156,
+        single_gates={"sx", "rz", "x", "measure"},
+        two_qubit_gates={"cz"},
+    ),
+    # ────────────────────────────────────────────────────────────────── IonQ ──
+    DeviceSpec(
+        name="ionq_aria_25",
+        num_qubits=None,  # accept catalogue default (>0)
+        single_gates={"gpi", "gpi2", "measure"},
+        two_qubit_gates={"ms"},
+        symmetric_connectivity={"ms": True},
+    ),
+    DeviceSpec(
+        name="ionq_forte_36",
+        num_qubits=None,
+        single_gates={"gpi", "gpi2", "measure"},
+        two_qubit_gates={"zz"},
+        symmetric_connectivity={"zz": True},
+    ),
+    # ─────────────────────────────────────────────────────────────────── IQM ──
+    DeviceSpec(
+        name="iqm_crystal_5",
+        num_qubits=5,
+        single_gates={"r", "measure"},
+        two_qubit_gates={"cz"},
+        symmetric_connectivity={"cz": True},
+    ),
+    DeviceSpec(
+        name="iqm_crystal_20",
+        num_qubits=20,
+        single_gates={"r", "measure"},
+        two_qubit_gates={"cz"},
+    ),
+    DeviceSpec(
+        name="iqm_crystal_54",
+        num_qubits=54,
+        single_gates={"r", "measure"},
+        two_qubit_gates={"cz"},
+    ),
+    # ────────────────────────────────────────────────────────────── Quantinuum ──
+    DeviceSpec(
+        name="quantinuum_h2_56",
+        num_qubits=56,
+        single_gates={"rx", "ry", "rz", "measure"},
+        two_qubit_gates={"rzz"},
+        symmetric_connectivity={"rzz": True},
+    ),
+    # ─────────────────────────────────────────────────────────────── Rigetti ──
+    DeviceSpec(
+        name="rigetti_ankaa_84",
+        num_qubits=84,
+        single_gates={"rxpi", "rxpi2", "rxpi2dg", "rz", "measure"},
+        two_qubit_gates={"iswap"},
+    ),
+]
 
-    # Basic metadata
+
+@pytest.mark.parametrize("spec", DEVICE_SPECS, ids=[d.name for d in DEVICE_SPECS])
+def test_device_spec(spec: DeviceSpec) -> None:
+    """Validate *all* devices according to their :class:`DeviceSpec`."""
+    target = get_device(spec.name)
+
+    # ── Basic identity checks ───────────────────────────────────────────────
     assert isinstance(target, Target)
-    assert target.description == "quantinuum_h2_56"
-    assert target.num_qubits == 56  # adjust if your calibration changes
+    assert target.description == spec.name
+    if spec.num_qubits is not None:
+        assert target.num_qubits == spec.num_qubits
+    else:
+        assert target.num_qubits > 0
 
-    # Ensure all expected gates are supported
-    expected_gates = {"rx", "ry", "rz", "rzz", "measure"}
-    assert expected_gates.issubset(set(target.operation_names))
+    # ── Single-qubit operations ──────────────────────────────────────────────
+    for gate in spec.single_gates:
+        _assert_single_qubit_gate_properties(target, gate, vendor=spec.name)
 
-    # === Single-qubit gates ===
-    for op in ["rx", "ry", "rz"]:
-        insts = target[op]
-        assert all(len(qargs) == 1 for qargs in insts), f"{op} not single-qubit"
-        for props in insts.values():
-            assert 0 <= props.error < 1
+    # ── Two-qubit operations ────────────────────────────────────────────────
+    for gate in spec.two_qubit_gates:
+        _assert_two_qubit_gate_properties(
+            target,
+            gate,
+            symmetric=spec.symmetric_connectivity.get(gate, False),
+            vendor=spec.name,
+        )
 
-    # === Measurement ===
-    insts = target["measure"]
-    assert all(len(qargs) == 1 for qargs in insts)
-    for props in insts.values():
-        assert 0 <= props.error < 1
-
-    # === Two-qubit gates ===
-    insts = target["rzz"]
-    assert all(len(qargs) == 2 for qargs in insts)
-    for (q0, q1), props in insts.items():
-        assert q0 != q1
-        assert 0 <= props.error < 1
-
-    # Symmetry check (if assumed)
-    # This is optional, depending on your calibration assumption
-    for q0, q1 in insts:
-        assert (q1, q0) in insts
-
-
-def test_rigetti_target() -> None:
-    """Test the structure of the Rigetti Ankaa 3 target device."""
-    target = get_device("rigetti_ankaa_84")
-
-    assert isinstance(target, Target)
-    assert target.description == "rigetti_ankaa_84"
-    assert target.num_qubits == 84
-
-    expected_single_qubit_gates = {
-        "rxpi",
-        "rxpi2",
-        "rxpi2dg",
-        "rz",
-        "measure",
-    }
-    expected_two_qubit_gates = {"iswap"}
-
-    assert expected_single_qubit_gates.issubset(set(target.operation_names))
-    assert any(g in target.operation_names for g in expected_two_qubit_gates)
-
-    # === Single-qubit gate properties ===
-    for gate in expected_single_qubit_gates:
-        if gate not in target.operation_names:
-            continue
-        for props in target[gate].values():
-            assert 0 <= props.error < 1
-
-    # === Two-qubit gate properties ===
-    for gate in expected_two_qubit_gates:
-        if gate not in target.operation_names:
-            continue
-        for (q0, q1), props in target[gate].items():
-            assert q0 != q1
-            assert 0 <= props.error < 1
-
-    # === Readout fidelity ===
-    if "measure" in target.operation_names:
-        for props in target["measure"].values():
-            assert 0 <= props.error < 1
+    # ── Measurement ─────────────────────────────────────────────────────────
+    _assert_measure_properties(target, vendor=spec.name)
 
 
 def test_get_unknown_device() -> None:
-    """Test the get_device function with an unknown device name."""
-    device = "unknown_device"
-    match = re.escape(f"Unknown device '{device}'. Available devices: {get_available_device_names()}")
+    """Requesting an unavailable device must raise *ValueError*."""
+    unknown_name = "unknown_device"
+    available = get_available_device_names()
+    pattern = rf"Unknown device '{unknown_name}'. Available devices: {re.escape(str(available))}"
 
-    with pytest.raises(ValueError, match=match):
-        get_device(device)
+    with pytest.raises(ValueError, match=pattern):
+        get_device(unknown_name)
