@@ -17,7 +17,6 @@ import pytest
 from pytest_console_scripts import ScriptRunner
 from qiskit.qasm3 import dumps
 
-from mqt.bench import CompilerSettings, QiskitSettings
 from mqt.bench.benchmark_generation import get_benchmark
 from mqt.bench.targets import get_device_by_name, get_target_for_gateset
 
@@ -33,7 +32,7 @@ if TYPE_CHECKING:
              "--level", "alg",
              "--algorithm", "ghz",
              "--num-qubits", "10",
-         ], dumps(get_benchmark(level="alg", benchmark_name="ghz", circuit_size=10))),
+         ], dumps(get_benchmark(level="alg", benchmark="ghz", circuit_size=10))),
         ([
              "--level", "alg",
              "--algorithm", "shor_xsmall",
@@ -44,18 +43,18 @@ if TYPE_CHECKING:
              "--level", "alg",
              "--algorithm", "ghz",
              "--num-qubits", "20",
-         ], dumps(get_benchmark(level="alg", benchmark_name="ghz", circuit_size=20))),
+         ], dumps(get_benchmark(level="alg", benchmark="ghz", circuit_size=20))),
         ([
              "--level", "indep",
              "--algorithm", "ghz",
              "--num-qubits", "20",
-         ], dumps(get_benchmark(level="indep", benchmark_name="ghz", circuit_size=20))),
+         ], dumps(get_benchmark(level="indep", benchmark="ghz", circuit_size=20))),
         ([
              "--level", "nativegates",
              "--algorithm", "ghz",
              "--num-qubits", "20",
              "--target", "ibm_falcon",
-         ], dumps(get_benchmark(level="nativegates", benchmark_name="ghz", circuit_size=20, target=get_target_for_gateset("ibm_falcon", 20)))),
+         ], dumps(get_benchmark(level="nativegates", benchmark="ghz", circuit_size=20, target=get_target_for_gateset("ibm_falcon", 20)))),
         ([
              "--level", "mapped",
              "--algorithm", "ghz",
@@ -64,9 +63,9 @@ if TYPE_CHECKING:
              "--target", "ibm_falcon_27",
          ], dumps(get_benchmark(
             level="mapped",
-            benchmark_name="ghz",
+            benchmark="ghz",
             circuit_size=20,
-            compiler_settings=CompilerSettings(QiskitSettings(optimization_level=2)),
+            opt_level=2,
             target=get_device_by_name("ibm_falcon_27"),
         ))),
         (["--help"], "usage: mqt.bench.cli"),

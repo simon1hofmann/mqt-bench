@@ -18,9 +18,8 @@ from pathlib import Path
 from mqt.bench.targets.devices import get_device_by_name
 from mqt.bench.targets.gatesets import get_target_for_gateset
 
-from . import CompilerSettings, QiskitSettings
-from .benchmark_generation import generate_filename, get_benchmark
-from .output import OutputFormat, save_circuit, write_circuit
+from .benchmark_generation import get_benchmark
+from .output import OutputFormat, generate_filename, save_circuit, write_circuit
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -68,6 +67,7 @@ def main() -> None:
     parser.add_argument(
         "--qiskit-optimization-level",
         type=int,
+        choices=range(4),
         help="Qiskit compiler optimization level (0-3).",
     )
     parser.add_argument(
@@ -96,11 +96,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Build Qiskit settings
-    qiskit_settings = QiskitSettings()
-    if args.qiskit_optimization_level is not None:
-        qiskit_settings = QiskitSettings(args.qiskit_optimization_level)
-
     # Parse algorithm and optional instance
     benchmark_name, benchmark_instance = parse_benchmark_name_and_instance(args.algorithm)
 
@@ -113,11 +108,11 @@ def main() -> None:
 
     # Generate circuit
     circuit = get_benchmark(
-        benchmark_name=benchmark_name,
+        benchmark=benchmark_name,
         benchmark_instance_name=benchmark_instance,
         level=args.level,
         circuit_size=args.num_qubits,
-        compiler_settings=CompilerSettings(qiskit=qiskit_settings),
+        opt_level=args.qiskit_optimization_level,
         target=target,
     )
 

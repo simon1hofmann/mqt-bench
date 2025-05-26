@@ -225,3 +225,34 @@ def save_circuit(
         return False
 
     return True
+
+
+def generate_filename(
+    benchmark_name: str,
+    level: str,
+    num_qubits: int | None,
+    target: Target | None = None,
+    opt_level: int | None = None,
+) -> str:
+    """Generate a benchmark filename based on the abstraction level and context.
+
+    Arguments:
+        benchmark_name: name of the quantum circuit
+        level: abstraction level
+        num_qubits: number of qubits in the benchmark circuit
+        target: target device (used for 'nativegates' and 'mapped')
+        opt_level: optional optimization level (used for 'nativegates' and 'mapped')
+
+    Returns:
+        A string representing a filename (excluding extension) that encodes
+        all relevant metadata for reproducibility and clarity.
+    """
+    base = f"{benchmark_name}_{level}"
+    if level in {"nativegates", "mapped"}:
+        assert opt_level is not None
+        assert target is not None
+        # sanitize the target.description to remove any special characters etc.
+        description = target.description.strip().split(" ")[0]
+        return f"{base}_{description}_opt{opt_level}_{num_qubits}"
+
+    return f"{base}_{num_qubits}"
