@@ -19,18 +19,18 @@ from ._registry import register
 
 def get_quantinuum_target(device_name: str) -> Target:
     """Get a hardcoded Quantinuum target device by name."""
-    if device_name == "quantinuum_h2":
-        return get_quantinuum_h2_target()
+    if device_name == "quantinuum_h2_56":
+        return get_quantinuum_h2_56()
     msg = f"Unknown Quantinuum device: '{device_name}'."
     raise ValueError(msg)
 
 
-@register("quantinuum_h2")
-def get_quantinuum_h2_target() -> Target:
+@register("quantinuum_h2_56")
+def get_quantinuum_h2_56() -> Target:
     """Get the target device for Quantinuum H2."""
     num_qubits = 56
     return _build_quantinuum_target(
-        name="quantinuum_h2",
+        name="quantinuum_h2_56",
         num_qubits=num_qubits,
         oneq_error=0.00003,
         twoq_error=0.0015,
