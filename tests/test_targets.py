@@ -6,7 +6,7 @@
 #
 # Licensed under the MIT License
 
-"""Test the IBM devices."""
+"""Test targets."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ from mqt.bench.targets.devices import get_available_device_names, get_device
         ("ibm_heron_156", 156, "cz"),
     ],
 )
-def test_ibm_target_structure(device_name: str, num_qubits: int, expected_2q_gate: str) -> None:
+def test_ibm_targets(device_name: str, num_qubits: int, expected_2q_gate: str) -> None:
     """Test structure and basic gate support for IBM targets."""
     target = get_device(device_name)
 
@@ -63,18 +63,25 @@ def test_ibm_target_structure(device_name: str, num_qubits: int, expected_2q_gat
         assert props is not None
 
 
-def test_ionq_target_from_calibration() -> None:
-    """Test the structure of the IonQ target device."""
-    target = get_device("ionq_aria_25")
+@pytest.mark.parametrize(
+    ("device_name", "entangling_gate"),
+    [
+        ("ionq_aria_25", "ms"),
+        ("ionq_forte_36", "zz"),
+    ],
+)
+def test_ionq_targets(device_name: str, entangling_gate: str) -> None:
+    """Test the structure of the IonQ targets."""
+    target = get_device(device_name)
 
     assert isinstance(target, Target)
-    assert target.description == "ionq_aria_25"
+    assert target.description == device_name
     assert target.num_qubits > 0
 
     # Check gate support
     assert "gpi" in target.operation_names
     assert "gpi2" in target.operation_names
-    assert "ms" in target.operation_names
+    assert entangling_gate in target.operation_names
     assert "measure" in target.operation_names
 
     # Single-qubit gates should have properties for all qubits
@@ -85,19 +92,27 @@ def test_ionq_target_from_calibration() -> None:
             assert props.error >= 0
 
     # Two-qubit gates should have connectivity and properties
-    for (q1, q2), props in target["ms"].items():
+    for (q1, q2), props in target[entangling_gate].items():
         assert q1 != q2
         assert props.duration > 0
         assert props.error > 0
 
 
-def test_iqm_target_from_calibration() -> None:
-    """Test the structure of the IQM target device."""
-    target = get_device("iqm_crystal_5")
+@pytest.mark.parametrize(
+    ("device_name", "num_qubits"),
+    [
+        ("iqm_crystal_5", 5),
+        ("iqm_crystal_20", 20),
+        ("iqm_crystal_54", 54),
+    ],
+)
+def test_iqm_targets(device_name: str, num_qubits: int) -> None:
+    """Test the structure of the IQM targets."""
+    target = get_device(device_name)
 
     assert isinstance(target, Target)
-    assert target.num_qubits > 0
-    assert "iqm" in target.description.lower()
+    assert target.description == device_name
+    assert target.num_qubits == num_qubits
 
     # Expected gate types
     expected_ops = {"r", "cz", "measure"}
@@ -120,11 +135,12 @@ def test_iqm_target_from_calibration() -> None:
         assert q1 != q2
         assert props.duration > 0
         assert 0 <= props.error < 1
-        # Also ensure the reverse pair is present (symmetry)
-        assert (q2, q1) in target["cz"]
+        # Also ensure the reverse pair is present (symmetry) for iqm_crystal_5
+        if device_name == "iqm_crystal_5":
+            assert (q2, q1) in target["cz"]
 
 
-def test_quantinuum_target_structure() -> None:
+def test_quantinuum_target() -> None:
     """Test the structure of the Quantinuum H2 target device."""
     target = get_device("quantinuum_h2_56")
 
@@ -163,7 +179,7 @@ def test_quantinuum_target_structure() -> None:
         assert (q1, q0) in insts
 
 
-def test_rigetti_ankaa_84_target_structure() -> None:
+def test_rigetti_target() -> None:
     """Test the structure of the Rigetti Ankaa 3 target device."""
     target = get_device("rigetti_ankaa_84")
 

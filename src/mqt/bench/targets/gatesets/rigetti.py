@@ -19,7 +19,7 @@ from ._registry import register
 
 
 @register("rigetti")
-def get_rigetti_ankaa_gateset() -> list[str]:
+def get_rigetti_gateset() -> list[str]:
     """Returns the basis gates of the Rigetti gateset."""
     return ["rxpi", "rxpi2", "rxpi2dg", "rz", "iswap", "measure"]
 
