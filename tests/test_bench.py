@@ -23,8 +23,8 @@ from qiskit.circuit.library import CXGate, HGate, RXGate, RZGate, XGate
 from qiskit.transpiler import InstructionProperties, PassManager, Target
 from qiskit.transpiler.passes import GatesInBasis
 
-from mqt.bench.targets.devices import get_available_device_names, get_device_by_name
-from mqt.bench.targets.gatesets import get_target_for_gateset
+from mqt.bench.targets.devices import get_available_device_names, get_device
+from mqt.bench.targets.gatesets import get_available_gateset_names, get_target_for_gateset
 
 if TYPE_CHECKING:  # pragma: no cover
     import types
@@ -371,16 +371,16 @@ def test_dj_constant_oracle() -> None:
             3,
             None,
             CompilerSettings(qiskit=QiskitSettings(optimization_level=0)),
-            get_device_by_name("ibm_falcon_127"),
+            get_device("ibm_falcon_127"),
         ),
-        ("ghz", 3, 3, None, None, get_device_by_name("ibm_falcon_27")),
+        ("ghz", 3, 3, None, None, get_device("ibm_falcon_27")),
         (
             "ghz",
             3,
             3,
             None,
             CompilerSettings(qiskit=QiskitSettings(optimization_level=0)),
-            get_device_by_name("ionq_aria_25"),
+            get_device("ionq_aria_25"),
         ),
     ],
 )
@@ -423,7 +423,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             "wrong_size",
             None,
             CompilerSettings(qiskit=QiskitSettings(optimization_level=1)),
-            get_device_by_name("rigetti_ankaa_84"),
+            get_device("rigetti_ankaa_84"),
         )
     match = "circuit_size must be None or int for this benchmark."
     with pytest.raises(ValueError, match=match):
@@ -433,7 +433,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             -1,
             None,
             CompilerSettings(qiskit=QiskitSettings(optimization_level=1)),
-            get_device_by_name("rigetti_ankaa_84"),
+            get_device("rigetti_ankaa_84"),
         )
 
     match = "benchmark_instance_name must be defined for this benchmark."
@@ -444,7 +444,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             3,
             2,
             CompilerSettings(qiskit=QiskitSettings(optimization_level=1)),
-            get_device_by_name("rigetti_ankaa_84"),
+            get_device("rigetti_ankaa_84"),
         )
 
     match = "compiler_settings must be of type CompilerSettings or None"
@@ -455,9 +455,9 @@ def test_get_benchmark_faulty_parameters() -> None:
             3,
             None,
             "wrong_compiler_settings",
-            get_device_by_name("rigetti_ankaa_84"),
+            get_device("rigetti_ankaa_84"),
         )
-    match = "Gateset 'wrong_gateset' not found in available gatesets."
+    match = re.escape(f"Unknown gateset 'wrong_gateset'. Available gatesets: {get_available_gateset_names()}")
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",
@@ -475,7 +475,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             3,
             None,
             CompilerSettings(qiskit=QiskitSettings(optimization_level=1)),
-            get_device_by_name("wrong_device"),
+            get_device("wrong_device"),
         )
 
 
@@ -501,7 +501,7 @@ def test_saving_qasm_to_alternative_location_with_alternative_filename(
     """Test saving the qasm file to an alternative location with an alternative filename."""
     directory = "."
     filename = "ae_test_qiskit"
-    target = get_device_by_name("ibm_falcon_127")
+    target = get_device("ibm_falcon_127")
     qc = get_benchmark("ae", abstraction_level, 5, target=target)
     assert qc
     res = get_mapped_level(
@@ -594,7 +594,7 @@ def test_create_ae_circuit_with_invalid_qubit_number() -> None:
         ("alg", None, "ghz_alg_5"),
         ("indep", None, "ghz_indep_5"),
         ("nativegates", get_target_for_gateset("ibm_falcon", 5), "ghz_nativegates_ibm_falcon_opt2_5"),
-        ("mapped", get_device_by_name("ibm_falcon_127"), "ghz_mapped_ibm_falcon_127_opt2_5"),
+        ("mapped", get_device("ibm_falcon_127"), "ghz_mapped_ibm_falcon_127_opt2_5"),
     ],
 )
 def test_generate_filename(level: str, target: Target, expected: str) -> None:

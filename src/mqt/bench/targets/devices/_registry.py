@@ -41,7 +41,7 @@ def register(device_name: str) -> Callable[[_DeviceFactory], _DeviceFactory]:
     return _decorator
 
 
-def get_device(device_name: str) -> Target:
+def get_device_by_name(device_name: str) -> Target:
     """Return an instantiated `Target` for a device_name.
 
     Arguments:

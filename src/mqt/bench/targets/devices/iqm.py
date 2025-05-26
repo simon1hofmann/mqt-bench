@@ -17,18 +17,6 @@ from qiskit.transpiler import InstructionProperties, Target
 from ._registry import register
 
 
-def get_iqm_target(device_name: str) -> Target:
-    """Get a hardcoded IQM target device by name."""
-    if device_name == "iqm_crystal_5":
-        return get_iqm_crystal_5()
-    if device_name == "iqm_crystal_20":
-        return get_iqm_crystal_20()
-    if device_name == "iqm_crystal_54":
-        return get_iqm_crystal_54()
-    msg = f"Unknown IQM device: '{device_name}'."
-    raise ValueError(msg)
-
-
 @register("iqm_crystal_5")
 def get_iqm_crystal_5() -> Target:
     """Get the target for a 5-qubit IQM Crystal architecture."""
