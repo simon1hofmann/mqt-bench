@@ -14,8 +14,9 @@ from qiskit.circuit import Parameter
 from qiskit.circuit.library import Measure, RZGate, iSwapGate
 from qiskit.transpiler import InstructionProperties, Target
 
-from ._registry import register
 from mqt.bench.targets.gatesets.rigetti import RXPI2DgGate, RXPI2Gate, RXPIGate
+
+from ._registry import register
 
 
 def get_rigetti_target(device_name: str) -> Target:
