@@ -38,11 +38,15 @@ from mqt.bench.benchmark_generation import (
     CompilerSettings,
     QiskitSettings,
     generate_filename,
+    get_alg_benchmark,
     get_alg_level,
     get_benchmark,
+    get_indep_benchmark,
     get_indep_level,
+    get_mapped_benchmark,
     get_mapped_level,
     get_module_for_benchmark,
+    get_native_gates_benchmark,
     get_native_gates_level,
     get_supported_benchmarks,
 )
@@ -852,3 +856,61 @@ def test_custom_target() -> None:
     qc_mapped = get_mapped_level(qc, qc.num_qubits, target, 0, False, True)
     assert qc_mapped.depth() > 0
     assert qc_mapped.layout is not None
+
+
+@pytest.mark.parametrize(("benchmark", "size"), [("qft", 4), ("bv", 6)])
+def test_alg_parity(benchmark: str, size: int) -> None:
+    """Test parity of algorithm-level benchmarks."""
+    qc_wrapper = get_alg_benchmark(benchmark, size)
+    qc_ref = get_benchmark(benchmark, "alg", size)
+    assert qc_wrapper == qc_ref
+
+
+@pytest.mark.parametrize(("benchmark", "size"), [("qft", 4)])
+def test_indep_parity(benchmark: str, size: int) -> None:
+    """Test parity of target-independent benchmarks."""
+    qc_wrapper = get_indep_benchmark(benchmark, size)
+    qc_ref = get_benchmark(benchmark, "indep", size)
+    assert qc_wrapper == qc_ref
+
+
+@pytest.mark.parametrize(("benchmark", "size", "opt_level"), [("qft", 4, 1), ("grover", 3, 2)])
+def test_native_gate_parity(benchmark: str, size: int, opt_level: int) -> None:
+    """Test parity of native gate-level benchmarks."""
+    target = get_target_for_gateset("ionq", num_qubits=size)
+    compiler_settings = CompilerSettings(QiskitSettings(opt_level))
+    qc_wrapper = get_native_gates_benchmark(
+        benchmark,
+        circuit_size=size,
+        target=target,
+        compiler_settings=compiler_settings,
+    )
+    qc_ref = get_benchmark(
+        benchmark,
+        "nativegates",
+        size,
+        compiler_settings=compiler_settings,
+        target=target,
+    )
+    assert qc_wrapper == qc_ref
+
+
+@pytest.mark.parametrize(("benchmark", "size", "opt_level"), [("qft", 4, 1)])
+def test_mapped_parity(benchmark: str, size: int, opt_level: int) -> None:
+    """Test parity of mapped benchmarks."""
+    target = get_device_by_name("ibm_falcon_127")
+    compiler_settings = CompilerSettings(QiskitSettings(opt_level))
+    qc_wrapper = get_mapped_benchmark(
+        benchmark,
+        circuit_size=size,
+        target=target,
+        compiler_settings=compiler_settings,
+    )
+    qc_ref = get_benchmark(
+        benchmark,
+        "mapped",
+        size,
+        compiler_settings=compiler_settings,
+        target=target,
+    )
+    assert qc_wrapper == qc_ref
