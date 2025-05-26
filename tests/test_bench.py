@@ -193,7 +193,7 @@ def test_quantumcircuit_indep_level(
     if scalable:
         assert qc.num_qubits == input_value
     assert benchmark.__name__.split(".")[-1] in qc.name
-    opt_level = 0
+    opt_level = 2
     res = get_indep_level(
         qc,
         input_value,
@@ -335,8 +335,8 @@ def test_dj_constant_oracle() -> None:
         ("grover", "alg", 3, None, None, None),
         ("qwalk", "alg", 3, None, None, None),
         # Independent level tests
-        ("ghz", "indep", 3, None, CompilerSettings(qiskit=QiskitSettings(optimization_level=0)), None),
-        ("graphstate", 1, 3, None, CompilerSettings(qiskit=QiskitSettings(optimization_level=0)), None),
+        ("ghz", "indep", 3, None, CompilerSettings(qiskit=QiskitSettings(optimization_level=2)), None),
+        ("graphstate", 1, 3, None, CompilerSettings(qiskit=QiskitSettings(optimization_level=2)), None),
         # Native gates level tests
         (
             "dj",
