@@ -94,8 +94,6 @@ def _create_raw_circuit(
         raise ValueError(msg)
 
     lib = get_module_for_benchmark(benchmark)
-    if benchmark == "shor":
-        return lib.create_circuit_from_size(circuit_size)
     return lib.create_circuit(circuit_size)
 
 

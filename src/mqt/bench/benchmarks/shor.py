@@ -42,21 +42,7 @@ _SIZE_TO_PARAMS = {
 }
 
 
-def create_circuit(num_to_be_factorized: int, a: int = 2) -> QuantumCircuit:
-    """Returns a quantum circuit implementing the Shor's algorithm.
-
-    Arguments:
-        num_to_be_factorized: number which shall be factorized
-        a: any integer that satisfies 1 < a < num_to_be_factorized and gcd(a, num_to_be_factorized) = 1
-    """
-    qc = Shor().construct_circuit(num_to_be_factorized, a)
-    qc.measure_all()
-    qc.name = "shor_" + str(num_to_be_factorized) + "_" + str(a)
-
-    return qc
-
-
-def create_circuit_from_size(circuit_size: int) -> QuantumCircuit:
+def create_circuit(circuit_size: int) -> QuantumCircuit:
     """Construct Shor's circuit based on total qubit count.
 
     Arguments:
@@ -75,7 +61,21 @@ def create_circuit_from_size(circuit_size: int) -> QuantumCircuit:
         msg = f"No Shor instance for circuit_size={circuit_size}. Available: {valid}."
         raise ValueError(msg) from exc
 
-    return create_circuit(n, a)
+    return create_circuit_from_num_and_coprime(n, a)
+
+
+def create_circuit_from_num_and_coprime(num_to_be_factorized: int, a: int = 2) -> QuantumCircuit:
+    """Returns a quantum circuit implementing the Shor's algorithm.
+
+    Arguments:
+        num_to_be_factorized: number which shall be factorized
+        a: any integer that satisfies 1 < a < num_to_be_factorized and gcd(a, num_to_be_factorized) = 1
+    """
+    qc = Shor().construct_circuit(num_to_be_factorized, a)
+    qc.measure_all()
+    qc.name = "shor_" + str(num_to_be_factorized) + "_" + str(a)
+
+    return qc
 
 
 def get_instance(choice: str) -> list[int]:
