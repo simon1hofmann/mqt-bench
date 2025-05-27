@@ -17,7 +17,7 @@ import pytest
 from pytest_console_scripts import ScriptRunner
 from qiskit.qasm3 import dumps
 
-from mqt.bench.benchmark_generation import get_benchmark
+from mqt.bench.benchmark_generation import BenchmarkLevel, get_benchmark
 from mqt.bench.targets import get_device_by_name, get_target_for_gateset
 
 if TYPE_CHECKING:
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
              "--level", "alg",
              "--algorithm", "ghz",
              "--num-qubits", "10",
-         ], dumps(get_benchmark(level="alg", benchmark="ghz", circuit_size=10))),
+         ], dumps(get_benchmark(level=BenchmarkLevel.ALG, benchmark="ghz", circuit_size=10))),
         ([
              "--level", "alg",
              "--algorithm", "shor_xsmall",
@@ -43,18 +43,20 @@ if TYPE_CHECKING:
              "--level", "alg",
              "--algorithm", "ghz",
              "--num-qubits", "20",
-         ], dumps(get_benchmark(level="alg", benchmark="ghz", circuit_size=20))),
+         ], dumps(get_benchmark(level=BenchmarkLevel.ALG, benchmark="ghz", circuit_size=20))),
         ([
              "--level", "indep",
              "--algorithm", "ghz",
              "--num-qubits", "20",
-         ], dumps(get_benchmark(level="indep", benchmark="ghz", circuit_size=20))),
+    "--qiskit-optimization-level", "2",
+         ], dumps(get_benchmark(level=BenchmarkLevel.INDEP, benchmark="ghz", circuit_size=20, opt_level=2))),
         ([
              "--level", "nativegates",
              "--algorithm", "ghz",
              "--num-qubits", "20",
+            "--qiskit-optimization-level", "2",
              "--target", "ibm_falcon",
-         ], dumps(get_benchmark(level="nativegates", benchmark="ghz", circuit_size=20, target=get_target_for_gateset("ibm_falcon", 20)))),
+         ], dumps(get_benchmark(level=BenchmarkLevel.NATIVEGATES, benchmark="ghz", circuit_size=20, target=get_target_for_gateset("ibm_falcon", 20), opt_level=2))),
         ([
              "--level", "mapped",
              "--algorithm", "ghz",
@@ -62,7 +64,7 @@ if TYPE_CHECKING:
              "--qiskit-optimization-level", "2",
              "--target", "ibm_falcon_27",
          ], dumps(get_benchmark(
-            level="mapped",
+            level=BenchmarkLevel.MAPPED,
             benchmark="ghz",
             circuit_size=20,
             opt_level=2,

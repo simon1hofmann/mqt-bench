@@ -18,7 +18,7 @@ from pathlib import Path
 from mqt.bench.targets.devices import get_device_by_name
 from mqt.bench.targets.gatesets import get_target_for_gateset
 
-from .benchmark_generation import get_benchmark
+from .benchmark_generation import BenchmarkLevel, get_benchmark
 from .output import OutputFormat, generate_filename, save_circuit, write_circuit
 
 
@@ -99,9 +99,21 @@ def main() -> None:
     # Parse algorithm and optional instance
     benchmark_name, benchmark_instance = parse_benchmark_name_and_instance(args.algorithm)
 
-    if args.level == "nativegates":
-        target = get_target_for_gateset(args.target, num_qubits=args.num_qubits)
+    if args.level == "alg":
+        level = BenchmarkLevel.ALG
+    elif args.level == "indep":
+        level = BenchmarkLevel.INDEP
+    elif args.level == "nativegates":
+        level = BenchmarkLevel.NATIVEGATES
     elif args.level == "mapped":
+        level = BenchmarkLevel.MAPPED
+    else:
+        msg = f"Unknown level: {args.level}"
+        raise ValueError(msg)
+
+    if level == BenchmarkLevel.NATIVEGATES:
+        target = get_target_for_gateset(args.target, num_qubits=args.num_qubits)
+    elif level == BenchmarkLevel.MAPPED:
         target = get_device_by_name(args.target)
     else:
         target = None
@@ -110,7 +122,7 @@ def main() -> None:
     circuit = get_benchmark(
         benchmark=benchmark_name,
         benchmark_instance_name=benchmark_instance,
-        level=args.level,
+        level=level,
         circuit_size=args.num_qubits,
         opt_level=args.qiskit_optimization_level,
         target=target,
@@ -124,13 +136,13 @@ def main() -> None:
 
     # For QASM outputs, serialize and print
     if fmt in (OutputFormat.QASM2, OutputFormat.QASM3) and not args.save:
-        write_circuit(circuit, sys.stdout, args.level, fmt, target)
+        write_circuit(circuit, sys.stdout, level, fmt, target)
         return
 
     # Otherwise, save to file
     filename = generate_filename(
         benchmark_name=benchmark_name,
-        level=args.level,
+        level=level,
         num_qubits=args.num_qubits,
         target=target,
         opt_level=args.qiskit_optimization_level,
@@ -138,7 +150,7 @@ def main() -> None:
     success = save_circuit(
         qc=circuit,
         filename=filename,
-        level=args.level,
+        level=level,
         output_format=fmt,
         target=target,
         target_directory=args.target_directory,
