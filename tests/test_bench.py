@@ -317,6 +317,18 @@ def test_get_benchmark(
             assert gate_type in target.operation_names or gate_type == "barrier"
 
 
+def test_get_benchmark_alg_with_qantum_circuit() -> None:
+    """Test get_benchmark method with QuantumCircuit as input for algorithm level benchmarks."""
+    qc = ae.create_circuit(3)
+    qc_bench = get_benchmark(
+        qc,
+        BenchmarkLevel.ALG,
+        3,
+    )
+
+    assert qc == qc_bench
+
+
 def test_get_benchmark_faulty_parameters() -> None:
     """Test the get_benchmark method with faulty parameters."""
     match = "'wrong_name' is not a supported benchmark. Valid names"

@@ -278,6 +278,7 @@ def get_benchmark(
         Qiskit::QuantumCircuit object representing the benchmark with the selected options
     """
     if level is BenchmarkLevel.ALG:
+        print(type(benchmark))
         if isinstance(benchmark, QuantumCircuit):
             return benchmark
         return get_benchmark_alg(

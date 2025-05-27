@@ -94,11 +94,8 @@ def main() -> None:
         level = BenchmarkLevel.INDEP
     elif args.level == "nativegates":
         level = BenchmarkLevel.NATIVEGATES
-    elif args.level == "mapped":
-        level = BenchmarkLevel.MAPPED
     else:
-        msg = f"Unknown level: {args.level}"
-        raise ValueError(msg)
+        level = BenchmarkLevel.MAPPED
 
     if level == BenchmarkLevel.NATIVEGATES:
         target = get_target_for_gateset(args.target, num_qubits=args.num_qubits)
