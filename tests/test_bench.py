@@ -76,9 +76,6 @@ from mqt.bench.output import (
     save_circuit,
     write_circuit,
 )
-from mqt.bench.targets.devices import (
-    get_available_devices,
-)
 from mqt.bench.targets.gatesets import (
     get_available_native_gatesets,
 )
@@ -211,6 +208,9 @@ def test_quantumcircuit_native_and_mapped_levels(benchmark: types.ModuleType, in
             qc.num_qubits,
             gateset,
             opt_level=0,
+        )
+
+        assert res
 
 
 def test_bv() -> None:
@@ -351,15 +351,6 @@ def test_get_benchmark_faulty_parameters() -> None:
             4,
         )
     match = re.escape(f"Unknown gateset 'wrong_gateset'. Available gatesets: {get_available_gateset_names()}")
-    with pytest.raises(ValueError, match=match):
-        get_benchmark(
-            "qpeexact",
-            BenchmarkLevel.INDEP,
-            3,
-            get_device_by_name("rigetti_ankaa_84"),
-            None,
-        )
-    match = "Gateset 'wrong_gateset' not found in available gatesets."
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",
@@ -751,7 +742,7 @@ def test_native_gate_parity(benchmark: str, size: int, opt_level: int) -> None:
 @pytest.mark.parametrize(("benchmark", "size", "opt_level"), [("qft", 4, 1)])
 def test_mapped_parity(benchmark: str, size: int, opt_level: int) -> None:
     """Test parity of mapped benchmarks."""
-    target = get_device_by_name("ibm_falcon_127")
+    target = get_device("ibm_falcon_127")
     qc_wrapper = get_benchmark_mapped(
         benchmark,
         size,
@@ -779,7 +770,7 @@ def test_validate_opt_level(benchmark: str, size: int, opt_level: int) -> None:
             opt_level=opt_level,
         )
 
-    target = get_device_by_name("ibm_falcon_127")
+    target = get_device("ibm_falcon_127")
     with pytest.raises(ValueError, match=match):
         get_benchmark_native_gates(
             benchmark,
