@@ -35,8 +35,8 @@ if TYPE_CHECKING:
          ], dumps(get_benchmark(level=BenchmarkLevel.ALG, benchmark="ghz", circuit_size=10))),
         ([
              "--level", "alg",
-             "--algorithm", "shor_xsmall",
-             "--num-qubits", "10",
+             "--algorithm", "shor",
+             "--num-qubits", "18",
             "--output-format", "qasm2",
          ], "OPENQASM 2.0;"),  # Note: shor is non-deterministic, so just a basic sanity check
         ([
@@ -48,20 +48,20 @@ if TYPE_CHECKING:
              "--level", "indep",
              "--algorithm", "ghz",
              "--num-qubits", "20",
-    "--qiskit-optimization-level", "2",
+    "--optimization-level", "2",
          ], dumps(get_benchmark(level=BenchmarkLevel.INDEP, benchmark="ghz", circuit_size=20, opt_level=2))),
         ([
              "--level", "nativegates",
              "--algorithm", "ghz",
              "--num-qubits", "20",
-            "--qiskit-optimization-level", "2",
+            "--optimization-level", "2",
              "--target", "ibm_falcon",
          ], dumps(get_benchmark(level=BenchmarkLevel.NATIVEGATES, benchmark="ghz", circuit_size=20, target=get_target_for_gateset("ibm_falcon", 20), opt_level=2))),
         ([
              "--level", "mapped",
              "--algorithm", "ghz",
              "--num-qubits", "20",
-             "--qiskit-optimization-level", "2",
+             "--optimization-level", "2",
              "--target", "ibm_falcon_27",
          ], dumps(get_benchmark(
             level=BenchmarkLevel.MAPPED,
@@ -149,7 +149,7 @@ def test_cli_nativegates_qasm2_save(tmp_path: Path, script_runner: ScriptRunner)
             "--algorithm", "ghz",
             "--num-qubits", "5",
             "--target", "ibm_falcon",
-            "--qiskit-optimization-level", "1",
+            "--optimization-level", "1",
             "--output-format", "qasm2",
             "--save",
             "--target-directory", target_dir,
@@ -171,7 +171,7 @@ def test_cli_mapped_qasm2_save(tmp_path: Path, script_runner: ScriptRunner) -> N
             "--algorithm", "ghz",
             "--num-qubits", "5",
             "--target", "ibm_falcon_27",
-            "--qiskit-optimization-level", "1",
+            "--optimization-level", "1",
             "--output-format", "qasm2",
             "--save",
             "--target-directory", target_dir,

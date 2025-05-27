@@ -34,14 +34,6 @@ class CustomArgumentParser(argparse.ArgumentParser):
         return help_message + version_info
 
 
-def parse_benchmark_name_and_instance(algorithm: str) -> tuple[str, str | None]:
-    """Parse an algorithm name like "shor_xlarge" into a benchmark and instance name."""
-    if algorithm.startswith("shor_"):
-        parts = algorithm.split("_", 1)
-        return parts[0], parts[1]
-    return algorithm, None
-
-
 def main() -> None:
     """Generate a single benchmark and output in specified format."""
     parser = CustomArgumentParser(description="Generate a single benchmark")
@@ -55,7 +47,7 @@ def main() -> None:
     parser.add_argument(
         "--algorithm",
         type=str,
-        help="Name of the benchmark (e.g., 'grover', 'shor_xsmall').",
+        help="Name of the benchmark (e.g., 'grover', 'shor').",
         required=True,
     )
     parser.add_argument(
@@ -65,7 +57,7 @@ def main() -> None:
         required=True,
     )
     parser.add_argument(
-        "--qiskit-optimization-level",
+        "--optimization-level",
         type=int,
         choices=range(4),
         help="Qiskit compiler optimization level (0-3).",
@@ -96,9 +88,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Parse algorithm and optional instance
-    benchmark_name, benchmark_instance = parse_benchmark_name_and_instance(args.algorithm)
-
     if args.level == "alg":
         level = BenchmarkLevel.ALG
     elif args.level == "indep":
@@ -120,12 +109,11 @@ def main() -> None:
 
     # Generate circuit
     circuit = get_benchmark(
-        benchmark=benchmark_name,
-        benchmark_instance_name=benchmark_instance,
+        benchmark=args.algorithm,
         level=level,
         circuit_size=args.num_qubits,
-        opt_level=args.qiskit_optimization_level,
         target=target,
+        opt_level=args.optimization_level,
     )
 
     try:
@@ -141,11 +129,11 @@ def main() -> None:
 
     # Otherwise, save to file
     filename = generate_filename(
-        benchmark_name=benchmark_name,
+        benchmark_name=args.algorithm,
         level=level,
         num_qubits=args.num_qubits,
         target=target,
-        opt_level=args.qiskit_optimization_level,
+        opt_level=args.optimization_level,
     )
     success = save_circuit(
         qc=circuit,

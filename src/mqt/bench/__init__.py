@@ -12,18 +12,18 @@ from __future__ import annotations
 
 from mqt.bench.benchmark_generation import (
     BenchmarkLevel,
-    get_alg_benchmark,
     get_benchmark,
-    get_indep_benchmark,
-    get_mapped_benchmark,
-    get_native_gates_benchmark,
+    get_benchmark_alg,
+    get_benchmark_indep,
+    get_benchmark_mapped,
+    get_benchmark_native_gates,
 )
 
 __all__ = [
     "BenchmarkLevel",
-    "get_alg_benchmark",
     "get_benchmark",
-    "get_indep_benchmark",
-    "get_mapped_benchmark",
-    "get_native_gates_benchmark",
+    "get_benchmark_alg",
+    "get_benchmark_indep",
+    "get_benchmark_mapped",
+    "get_benchmark_native_gates",
 ]

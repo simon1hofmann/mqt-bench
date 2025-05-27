@@ -36,12 +36,13 @@ from qiskit import QuantumCircuit, qpy
 
 from mqt.bench.benchmark_generation import (
     BenchmarkLevel,
-    get_alg_benchmark,
+    _format_shor_choices,  # noqa: PLC2701
     get_benchmark,
-    get_indep_benchmark,
-    get_mapped_benchmark,
+    get_benchmark_alg,
+    get_benchmark_indep,
+    get_benchmark_mapped,
+    get_benchmark_native_gates,
     get_module_for_benchmark,
-    get_native_gates_benchmark,
     get_supported_benchmarks,
 )
 from mqt.bench.benchmarks import (
@@ -125,7 +126,7 @@ def test_quantumcircuit_alg_level(benchmark: types.ModuleType, input_value: int,
         assert qc.num_qubits == input_value
     assert benchmark.__name__.split(".")[-1] in qc.name
 
-    res = get_alg_benchmark(
+    res = get_benchmark_alg(
         qc,
         input_value,
     )
@@ -165,7 +166,7 @@ def test_quantumcircuit_indep_level(benchmark: types.ModuleType, input_value: in
     if scalable:
         assert qc.num_qubits == input_value
     assert benchmark.__name__.split(".")[-1] in qc.name
-    res = get_indep_benchmark(
+    res = get_benchmark_indep(
         qc,
         input_value,
     )
@@ -206,20 +207,20 @@ def test_quantumcircuit_native_and_mapped_levels(benchmark: types.ModuleType, in
     native_gatesets = get_available_native_gatesets()
     for gateset_name in native_gatesets:
         gateset = get_target_for_gateset(gateset_name, num_qubits=qc.num_qubits)
-        res = get_native_gates_benchmark(
+        res = get_benchmark_native_gates(
             qc,
+            qc.num_qubits,
             gateset,
-            circuit_size=qc.num_qubits,
             opt_level=0,
         )
         assert res
 
     for device in get_available_devices():
         if device.num_qubits >= qc.num_qubits:
-            res = get_mapped_benchmark(
+            res = get_benchmark_mapped(
                 qc,
-                device,
                 qc.num_qubits,
+                device,
                 opt_level=0,
             )
             assert res
@@ -252,47 +253,43 @@ def test_dj_constant_oracle() -> None:
         "benchmark_name",
         "level",
         "circuit_size",
-        "benchmark_instance_name",
-        "opt_level",
         "target",
+        "opt_level",
     ),
     [
         # Algorithm-level tests
-        ("dj", BenchmarkLevel.ALG, 3, None, None, None),
-        ("wstate", BenchmarkLevel.ALG, 3, None, None, None),
-        ("shor", BenchmarkLevel.ALG, None, "xsmall", None, None),
-        ("grover", BenchmarkLevel.ALG, 3, None, None, None),
-        ("qwalk", BenchmarkLevel.ALG, 3, None, None, None),
+        ("dj", BenchmarkLevel.ALG, 3, None, None),
+        ("wstate", BenchmarkLevel.ALG, 3, None, None),
+        ("shor", BenchmarkLevel.ALG, 18, None, None),
+        ("grover", BenchmarkLevel.ALG, 3, None, None),
+        ("qwalk", BenchmarkLevel.ALG, 3, None, None),
         # Independent level tests
-        ("ghz", BenchmarkLevel.INDEP, 3, None, 2, None),
-        ("graphstate", BenchmarkLevel.INDEP, 3, None, 2, None),
+        ("ghz", BenchmarkLevel.INDEP, 3, None, 2),
+        ("graphstate", BenchmarkLevel.INDEP, 3, None, 2),
         # Native gates level tests
         (
             "dj",
             BenchmarkLevel.NATIVEGATES,
             2,
-            None,
-            0,
             get_target_for_gateset("ionq_forte", num_qubits=5),
+            0,
         ),
-        ("qft", BenchmarkLevel.NATIVEGATES, 3, None, 2, get_target_for_gateset("rigetti", 5)),
+        ("qft", BenchmarkLevel.NATIVEGATES, 3, get_target_for_gateset("rigetti", 5), 2),
         # Mapped level tests
         (
             "ghz",
             BenchmarkLevel.MAPPED,
             3,
-            None,
-            0,
             get_device_by_name("ibm_falcon_127"),
+            0,
         ),
-        ("ghz", BenchmarkLevel.MAPPED, 3, None, 2, get_device_by_name("ibm_falcon_27")),
+        ("ghz", BenchmarkLevel.MAPPED, 3, get_device_by_name("ibm_falcon_27"), 2),
         (
             "ghz",
             BenchmarkLevel.MAPPED,
             3,
-            None,
-            0,
             get_device_by_name("ionq_aria_25"),
+            0,
         ),
     ],
 )
@@ -300,18 +297,16 @@ def test_get_benchmark(
     benchmark_name: str,
     level: BenchmarkLevel,
     circuit_size: int | None,
-    benchmark_instance_name: str | None,
+    target: Target | None,
     opt_level: int | None,
-    target: Target,
 ) -> None:
     """Test the creation of the benchmarks using the get_benchmark method."""
     qc = get_benchmark(
         benchmark_name,
         level,
         circuit_size,
-        benchmark_instance_name,
-        opt_level,
         target,
+        opt_level,
     )
     assert qc.depth() > 0
     if target:
@@ -327,37 +322,24 @@ def test_get_benchmark_faulty_parameters() -> None:
     match = "'wrong_name' is not a supported benchmark. Valid names"
     with pytest.raises(ValueError, match=match):
         get_benchmark("wrong_name", BenchmarkLevel.INDEP, 6)
-    allowed = ", ".join(f"BenchmarkLevel.{m.name}" for m in BenchmarkLevel)
-    match = f"Invalid benchmark level '8'. Must be one of: {allowed}."
-    with pytest.raises(TypeError, match=match):
-        get_benchmark(
-            "qpeexact",
-            8,
-            3,
-            None,
-            1,
-            get_device_by_name("rigetti_ankaa_84"),
-        )
-    match = "`circuit_size` must be a positive integer for this benchmark."
+    match = "`circuit_size` must be a positive integer."
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "dj",
             BenchmarkLevel.INDEP,
             -1,
-            None,
-            1,
             get_device_by_name("rigetti_ankaa_84"),
+            1,
         )
 
-    match = "`benchmark_instance_name` must be given for Shor benchmarks."
+    match = re.escape(f"No Shor instance for circuit_size=3. Available: {_format_shor_choices()}.")
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "shor",
             BenchmarkLevel.INDEP,
             3,
-            2,
-            1,
             get_device_by_name("rigetti_ankaa_84"),
+            1,
         )
 
     match = re.escape("Invalid `opt_level` '4'. Must be in the range [0, 3].")
@@ -366,9 +348,8 @@ def test_get_benchmark_faulty_parameters() -> None:
             "qpeexact",
             BenchmarkLevel.INDEP,
             3,
-            None,
-            4,
             get_device_by_name("rigetti_ankaa_84"),
+            4,
         )
     match = re.escape("`opt_level` must be specified for indep, nativegates, or mapped level.")
     with pytest.raises(ValueError, match=match):
@@ -376,9 +357,8 @@ def test_get_benchmark_faulty_parameters() -> None:
             "qpeexact",
             BenchmarkLevel.INDEP,
             3,
-            None,
-            None,
             get_device_by_name("rigetti_ankaa_84"),
+            None,
         )
     match = "Gateset 'wrong_gateset' not found in available gatesets."
     with pytest.raises(ValueError, match=match):
@@ -386,9 +366,8 @@ def test_get_benchmark_faulty_parameters() -> None:
             "qpeexact",
             BenchmarkLevel.NATIVEGATES,
             3,
-            None,
-            1,
             get_target_for_gateset("wrong_gateset", 3),
+            1,
         )
     match = "Device 'wrong_device' not found."
     with pytest.raises(ValueError, match=match):
@@ -396,9 +375,8 @@ def test_get_benchmark_faulty_parameters() -> None:
             "qpeexact",
             BenchmarkLevel.MAPPED,
             3,
-            None,
-            1,
             get_device_by_name("wrong_device"),
+            1,
         )
 
 
@@ -408,8 +386,8 @@ def test_clifford_t() -> None:
         benchmark="qft",
         level=BenchmarkLevel.NATIVEGATES,
         circuit_size=4,
-        opt_level=1,
         target=get_target_for_gateset("clifford+t", 4),
+        opt_level=1,
     )
 
     clifford_t_target = get_target_for_gateset("clifford+t", num_qubits=4)
@@ -726,11 +704,11 @@ def test_custom_target() -> None:
     qc.cx(0, 1)
 
     for opt_level in [0, 1, 2, 3]:
-        qc_native_gates = get_native_gates_benchmark(qc, target, 2, opt_level=opt_level)
+        qc_native_gates = get_benchmark_native_gates(qc, 2, target, opt_level)
         assert qc_native_gates.depth() > 0
         assert qc_native_gates.layout is None
 
-    qc_mapped = get_mapped_benchmark(qc, target, qc.num_qubits, opt_level=0)
+    qc_mapped = get_benchmark_mapped(qc, qc.num_qubits, target, 0)
     assert qc_mapped.depth() > 0
     assert qc_mapped.layout is not None
 
@@ -738,7 +716,7 @@ def test_custom_target() -> None:
 @pytest.mark.parametrize(("benchmark", "size"), [("qft", 4), ("bv", 6)])
 def test_alg_parity(benchmark: str, size: int) -> None:
     """Test parity of algorithm-level benchmarks."""
-    qc_wrapper = get_alg_benchmark(benchmark, size)
+    qc_wrapper = get_benchmark_alg(benchmark, size)
     qc_ref = get_benchmark(benchmark, BenchmarkLevel.ALG, size)
     assert qc_wrapper == qc_ref
 
@@ -746,7 +724,7 @@ def test_alg_parity(benchmark: str, size: int) -> None:
 @pytest.mark.parametrize(("benchmark", "size"), [("qft", 4)])
 def test_indep_parity(benchmark: str, size: int) -> None:
     """Test parity of target-independent benchmarks."""
-    qc_wrapper = get_indep_benchmark(benchmark, size)
+    qc_wrapper = get_benchmark_indep(benchmark, size)
     qc_ref = get_benchmark(benchmark, BenchmarkLevel.INDEP, size)
     assert qc_wrapper == qc_ref
 
@@ -755,18 +733,18 @@ def test_indep_parity(benchmark: str, size: int) -> None:
 def test_native_gate_parity(benchmark: str, size: int, opt_level: int) -> None:
     """Test parity of native gate-level benchmarks."""
     target = get_target_for_gateset("ionq_forte", num_qubits=size)
-    qc_wrapper = get_native_gates_benchmark(
+    qc_wrapper = get_benchmark_native_gates(
         benchmark,
-        target,
         size,
-        opt_level=opt_level,
+        target,
+        opt_level,
     )
     qc_ref = get_benchmark(
         benchmark,
         BenchmarkLevel.NATIVEGATES,
         size,
-        opt_level=opt_level,
-        target=target,
+        target,
+        opt_level,
     )
     assert qc_wrapper == qc_ref
 
@@ -775,18 +753,18 @@ def test_native_gate_parity(benchmark: str, size: int, opt_level: int) -> None:
 def test_mapped_parity(benchmark: str, size: int, opt_level: int) -> None:
     """Test parity of mapped benchmarks."""
     target = get_device_by_name("ibm_falcon_127")
-    qc_wrapper = get_mapped_benchmark(
+    qc_wrapper = get_benchmark_mapped(
         benchmark,
-        target,
         size,
-        opt_level=opt_level,
+        target,
+        opt_level,
     )
     qc_ref = get_benchmark(
         benchmark,
         BenchmarkLevel.MAPPED,
         size,
-        opt_level=opt_level,
-        target=target,
+        target,
+        opt_level,
     )
     assert qc_wrapper == qc_ref
 
@@ -796,7 +774,7 @@ def test_validate_opt_level(benchmark: str, size: int, opt_level: int) -> None:
     """Test opt_level validation."""
     match = re.escape(f"Invalid `opt_level` '{opt_level}'. Must be in the range [0, 3].")
     with pytest.raises(ValueError, match=match):
-        get_indep_benchmark(
+        get_benchmark_indep(
             benchmark,
             circuit_size=size,
             opt_level=opt_level,
@@ -804,58 +782,44 @@ def test_validate_opt_level(benchmark: str, size: int, opt_level: int) -> None:
 
     target = get_device_by_name("ibm_falcon_127")
     with pytest.raises(ValueError, match=match):
-        get_native_gates_benchmark(
+        get_benchmark_native_gates(
             benchmark,
             circuit_size=size,
-            opt_level=opt_level,
             target=target,
+            opt_level=opt_level,
         )
     with pytest.raises(ValueError, match=match):
-        get_mapped_benchmark(
+        get_benchmark_mapped(
             benchmark,
             circuit_size=size,
-            opt_level=opt_level,
             target=target,
+            opt_level=opt_level,
         )
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             benchmark,
             level=BenchmarkLevel.INDEP,
             circuit_size=size,
-            opt_level=opt_level,
             target=target,
+            opt_level=opt_level,
         )
 
 
 @pytest.mark.parametrize(("benchmark", "size", "opt_level"), [("qft", 4, 1)])
 def test_target_must_be_supplied(benchmark: str, size: int, opt_level: int) -> None:
     """Test target must be supplied for mapped and native-gates levels."""
-    with pytest.raises(ValueError, match=r"`target` must be supplied for the native-gates level."):
-        get_native_gates_benchmark(
-            benchmark,
-            circuit_size=size,
-            opt_level=opt_level,
-            target=None,
-        )
-    with pytest.raises(ValueError, match=r"`target` must be supplied for the mapped level."):
-        get_mapped_benchmark(
-            benchmark,
-            circuit_size=size,
-            opt_level=opt_level,
-            target=None,
-        )
     with pytest.raises(
-        TypeError, match=re.escape("get_native_gates_benchmark() missing 1 required positional argument: 'target'")
+        TypeError, match=re.escape("get_benchmark_native_gates() missing 1 required positional argument: 'target'")
     ):
-        get_native_gates_benchmark(
+        get_benchmark_native_gates(
             benchmark,
             circuit_size=size,
             opt_level=opt_level,
         )
     with pytest.raises(
-        TypeError, match=re.escape("get_mapped_benchmark() missing 1 required positional argument: 'target'")
+        TypeError, match=re.escape("get_benchmark_mapped() missing 1 required positional argument: 'target'")
     ):
-        get_mapped_benchmark(
+        get_benchmark_mapped(
             benchmark,
             circuit_size=size,
             opt_level=opt_level,
