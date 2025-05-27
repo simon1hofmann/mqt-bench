@@ -18,7 +18,7 @@ from pytest_console_scripts import ScriptRunner
 from qiskit.qasm3 import dumps
 
 from mqt.bench.benchmark_generation import BenchmarkLevel, get_benchmark
-from mqt.bench.targets import get_device_by_name, get_target_for_gateset
+from mqt.bench.targets import get_device, get_target_for_gateset
 
 if TYPE_CHECKING:
     from pytest_console_scripts import ScriptResult, ScriptRunner
@@ -68,7 +68,7 @@ if TYPE_CHECKING:
             benchmark="ghz",
             circuit_size=20,
             opt_level=2,
-            target=get_device_by_name("ibm_falcon_27"),
+            target=get_device("ibm_falcon_27"),
         ))),
         (["--help"], "usage: mqt.bench.cli"),
     ],

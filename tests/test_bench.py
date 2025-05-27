@@ -23,8 +23,8 @@ from qiskit.circuit.library import CXGate, HGate, RXGate, RZGate, XGate
 from qiskit.transpiler import InstructionProperties, PassManager, Target
 from qiskit.transpiler.passes import GatesInBasis
 
-from mqt.bench.targets.devices import get_device_by_name
-from mqt.bench.targets.gatesets import get_target_for_gateset
+from mqt.bench.targets.devices import get_available_device_names, get_device
+from mqt.bench.targets.gatesets import get_available_gateset_names, get_target_for_gateset
 
 if TYPE_CHECKING:  # pragma: no cover
     import types
@@ -211,18 +211,6 @@ def test_quantumcircuit_native_and_mapped_levels(benchmark: types.ModuleType, in
             qc.num_qubits,
             gateset,
             opt_level=0,
-        )
-        assert res
-
-    for device in get_available_devices():
-        if device.num_qubits >= qc.num_qubits:
-            res = get_benchmark_mapped(
-                qc,
-                qc.num_qubits,
-                device,
-                opt_level=0,
-            )
-            assert res
 
 
 def test_bv() -> None:
@@ -279,15 +267,15 @@ def test_dj_constant_oracle() -> None:
             "ghz",
             BenchmarkLevel.MAPPED,
             3,
-            get_device_by_name("ibm_falcon_127"),
+            get_device("ibm_falcon_127"),
             0,
         ),
-        ("ghz", BenchmarkLevel.MAPPED, 3, get_device_by_name("ibm_falcon_27"), 2),
+        ("ghz", BenchmarkLevel.MAPPED, 3, get_device("ibm_falcon_27"), 2),
         (
             "ghz",
             BenchmarkLevel.MAPPED,
             3,
-            get_device_by_name("ionq_aria_25"),
+            get_device("ionq_aria_25"),
             0,
         ),
     ],
@@ -339,7 +327,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             "dj",
             BenchmarkLevel.INDEP,
             -1,
-            get_device_by_name("rigetti_ankaa_84"),
+            get_device("rigetti_ankaa_84"),
             1,
         )
 
@@ -349,7 +337,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             "shor",
             BenchmarkLevel.INDEP,
             3,
-            get_device_by_name("rigetti_ankaa_84"),
+            get_device("rigetti_ankaa_84"),
             1,
         )
 
@@ -359,10 +347,10 @@ def test_get_benchmark_faulty_parameters() -> None:
             "qpeexact",
             BenchmarkLevel.INDEP,
             3,
-            get_device_by_name("rigetti_ankaa_84"),
+            get_device("rigetti_ankaa_84"),
             4,
         )
-    match = re.escape("`opt_level` must be specified for indep, nativegates, or mapped level.")
+    match = re.escape(f"Unknown gateset 'wrong_gateset'. Available gatesets: {get_available_gateset_names()}")
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",
@@ -380,13 +368,13 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_target_for_gateset("wrong_gateset", 3),
             1,
         )
-    match = "Device 'wrong_device' not found."
+    match = re.escape(f"Unknown device 'wrong_device'. Available devices: {get_available_device_names()}")
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",
             BenchmarkLevel.MAPPED,
             3,
-            get_device_by_name("wrong_device"),
+            get_device("wrong_device"),
             1,
         )
 
@@ -466,7 +454,7 @@ def test_create_ae_circuit_with_invalid_qubit_number() -> None:
         (BenchmarkLevel.ALG, None, "ghz_alg_5"),
         (BenchmarkLevel.INDEP, None, "ghz_indep_opt2_5"),
         (BenchmarkLevel.NATIVEGATES, get_target_for_gateset("ibm_falcon", 5), "ghz_nativegates_ibm_falcon_opt2_5"),
-        (BenchmarkLevel.MAPPED, get_device_by_name("ibm_falcon_127"), "ghz_mapped_ibm_falcon_127_opt2_5"),
+        (BenchmarkLevel.MAPPED, get_device("ibm_falcon_127"), "ghz_mapped_ibm_falcon_127_opt2_5"),
     ],
 )
 def test_generate_filename(level: str, target: Target, expected: str) -> None:

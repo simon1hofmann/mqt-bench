@@ -15,7 +15,7 @@ import sys
 from importlib import metadata
 from pathlib import Path
 
-from mqt.bench.targets.devices import get_device_by_name
+from mqt.bench.targets.devices import get_device
 from mqt.bench.targets.gatesets import get_target_for_gateset
 
 from .benchmark_generation import BenchmarkLevel, get_benchmark
@@ -100,7 +100,7 @@ def main() -> None:
     if level == BenchmarkLevel.NATIVEGATES:
         target = get_target_for_gateset(args.target, num_qubits=args.num_qubits)
     elif level == BenchmarkLevel.MAPPED:
-        target = get_device_by_name(args.target)
+        target = get_device(args.target)
     else:
         target = None
 
