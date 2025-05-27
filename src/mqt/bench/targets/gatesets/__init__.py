@@ -17,8 +17,8 @@ from qiskit.circuit import Parameter
 from qiskit.circuit.library.standard_gates import get_standard_gate_name_mapping
 from qiskit.providers.fake_provider import GenericBackendV2
 
+from . import _registry as gateset_registry
 from . import clifford_t, ibm, ionq, iqm, quantinuum, rigetti
-from ._registry import all_gatesets, gateset_names, get_gateset_by_name
 
 if TYPE_CHECKING:
     from qiskit.transpiler import Target
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "clifford_t",
+    "gateset_registry",
     "get_available_gateset_names",
     "get_available_native_gatesets",
     "get_gateset",
@@ -39,20 +40,20 @@ __all__ = [
 @cache
 def get_available_native_gatesets() -> dict[str, list[str]]:
     """Return a dict of available native gatesets."""
-    return all_gatesets()
+    return gateset_registry.all_gatesets()
 
 
 @cache
 def get_available_gateset_names() -> list[str]:
     """Return a list of available gateset names."""
-    return gateset_names()
+    return gateset_registry.gateset_names()
 
 
 @cache
 def get_gateset(gateset_name: str) -> list[str]:
     """Return the gateset for a given gateset name."""
     try:
-        return get_gateset_by_name(gateset_name)
+        return gateset_registry.get_gateset_by_name(gateset_name)
     except KeyError:
         msg = f"Unknown gateset '{gateset_name}'. Available gatesets: {get_available_gateset_names()}"
         raise ValueError(msg) from None

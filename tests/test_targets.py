@@ -17,10 +17,13 @@ from typing import TYPE_CHECKING
 import pytest
 from qiskit.transpiler import Target
 
-from mqt.bench.targets.devices import _registry as device_registry  # noqa: PLC2701
-from mqt.bench.targets.devices import get_available_device_names, get_available_devices, get_device
-from mqt.bench.targets.gatesets import _registry as gateset_registry  # noqa: PLC2701
-from mqt.bench.targets.gatesets import get_available_gateset_names, get_available_native_gatesets, get_gateset
+from mqt.bench.targets.devices import device_registry, get_available_device_names, get_available_devices, get_device
+from mqt.bench.targets.gatesets import (
+    gateset_registry,
+    get_available_gateset_names,
+    get_available_native_gatesets,
+    get_gateset,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
