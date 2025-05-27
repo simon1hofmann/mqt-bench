@@ -89,6 +89,9 @@ def test_cli(args: list[str], expected_output: str, script_runner: ScriptRunner)
         (["--benchmark", "ae"], "usage: mqt.bench.cli"),
         # Note: We don't care about the actual error messages in most cases
         ([
+             "--level", "not-a-valid-level"
+         ], ""),
+        ([
              "--level", "alg",
              "--algorithm", "not-a-valid-benchmark",
              "--num-qubits", "20",

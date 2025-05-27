@@ -16,7 +16,7 @@ import re
 from datetime import date
 from importlib import metadata
 from pathlib import Path
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, NoReturn, cast
 
 from qiskit.circuit import Parameter
 from qiskit.circuit.library import CXGate, HGate, RXGate, RZGate, XGate
@@ -824,3 +824,12 @@ def test_target_must_be_supplied(benchmark: str, size: int, opt_level: int) -> N
             circuit_size=size,
             opt_level=opt_level,
         )
+
+
+def test_assert_never_runtime() -> None:
+    """Test that assert_never raises an error at runtime."""
+    bad_level = cast("BenchmarkLevel", object())
+
+    with pytest.raises(AssertionError):
+        # get_benchmark will fall through the if-chain and hit assert_never
+        get_benchmark("qft", level=bad_level, circuit_size=3)
