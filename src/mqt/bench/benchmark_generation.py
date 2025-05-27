@@ -37,15 +37,6 @@ class BenchmarkLevel(Enum):
     MAPPED = auto()
 
 
-# qubits → (nickname, N, a)
-SHOR_SIZE_TO_PARAMS = {
-    18: ("small", 15, 4),
-    42: ("medium", 821, 4),
-    58: ("large", 11777, 4),
-    74: ("xlarge", 201209, 4),
-}
-
-
 def get_supported_benchmarks() -> list[str]:
     """Returns a list of all supported benchmarks."""
     return [
@@ -78,11 +69,6 @@ def get_module_for_benchmark(benchmark_name: str) -> ModuleType:
     return import_module("mqt.bench.benchmarks." + benchmark_name)
 
 
-def _format_shor_choices() -> str:
-    """Return a human-readable list like '18 (small), 42 (medium), …'."""
-    return ", ".join(f"{size} ({nick})" for size, (nick, _, _) in SHOR_SIZE_TO_PARAMS.items())
-
-
 def _create_raw_circuit(
     benchmark: str,
     circuit_size: int,
@@ -103,20 +89,13 @@ def _create_raw_circuit(
         msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_supported_benchmarks()}"
         raise ValueError(msg)
 
-    if benchmark == "shor":
-        try:
-            _nick, n, a = SHOR_SIZE_TO_PARAMS[circuit_size]
-        except KeyError as exc:
-            msg = f"No Shor instance for circuit_size={circuit_size}. Available: {_format_shor_choices()}."
-            raise ValueError(msg) from exc
-
-        lib = get_module_for_benchmark("shor")
-        return lib.create_circuit(n, a)
-
     if circuit_size <= 0:
         msg = "`circuit_size` must be a positive integer."
         raise ValueError(msg)
+
     lib = get_module_for_benchmark(benchmark)
+    if benchmark == "shor":
+        return lib.create_circuit_from_size(circuit_size)
     return lib.create_circuit(circuit_size)
 
 

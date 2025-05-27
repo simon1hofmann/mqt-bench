@@ -36,7 +36,6 @@ from qiskit import QuantumCircuit, qpy
 
 from mqt.bench.benchmark_generation import (
     BenchmarkLevel,
-    _format_shor_choices,  # noqa: PLC2701
     get_benchmark,
     get_benchmark_alg,
     get_benchmark_indep,
@@ -344,7 +343,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             1,
         )
 
-    match = re.escape(f"No Shor instance for circuit_size=3. Available: {_format_shor_choices()}.")
+    match = "No Shor instance for circuit_size=3. Available: 18, 42, 58, 74."
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "shor",
