@@ -33,8 +33,8 @@ __all__ = [
 
 
 @cache
-def get_available_devices() -> list[Target]:
-    """Return a list of available devices."""
+def get_available_devices() -> dict[str, Target]:
+    """Return a dict of available devices."""
     return all_devices()
 
 

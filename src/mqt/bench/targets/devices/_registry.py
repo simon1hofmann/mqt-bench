@@ -65,11 +65,15 @@ def device_names() -> list[str]:
     return list(_REGISTRY)
 
 
-def all_devices() -> list[Target]:
-    """Instantiate and return all registered devices.
+def all_devices() -> dict[str, Target]:
+    """Provides a dictionary containing predefined devices.
+
+    This function returns a dictionary that maps the names of predefined devices
+    to their respective Targets. Each device in the
+    dictionary is represented as a key, with its value being the instantiated Target.
 
     Returns:
-        List of `~qiskit.transpiler.Target` objects corresponding
-        to every factory currently registered.
+        dict[str, Target]: A dictionary where keys are the names of
+        devices and values are instantiated Targets.
     """
-    return [factory() for factory in _REGISTRY.values()]
+    return {n: f() for n, f in _REGISTRY.items()}

@@ -38,7 +38,7 @@ __all__ = [
 
 @cache
 def get_available_native_gatesets() -> dict[str, list[str]]:
-    """Return a list of available native gatesets."""
+    """Return a dict of available native gatesets."""
     return all_gatesets()
 
 

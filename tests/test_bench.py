@@ -248,13 +248,12 @@ def test_quantumcircuit_native_and_mapped_levels(
     if scalable:
         assert qc.num_qubits == input_value
 
-    native_gatesets = get_available_native_gatesets()
-    for gateset_name in native_gatesets:
-        gateset = get_target_for_gateset(gateset_name, num_qubits=qc.num_qubits)
+    for gateset_name in get_available_native_gatesets():
+        target = get_target_for_gateset(gateset_name, num_qubits=qc.num_qubits)
         opt_level = 0
         res = get_native_gates_level(
             qc,
-            gateset,
+            target,
             qc.num_qubits,
             opt_level,
             file_precheck=False,
@@ -264,7 +263,7 @@ def test_quantumcircuit_native_and_mapped_levels(
         assert res
         res = get_native_gates_level(
             qc,
-            gateset,
+            target,
             qc.num_qubits,
             opt_level,
             file_precheck=True,
@@ -273,7 +272,7 @@ def test_quantumcircuit_native_and_mapped_levels(
         )
         assert res
 
-    for device in get_available_devices():
+    for device in get_available_devices().values():
         if device.num_qubits >= qc.num_qubits:
             res = get_mapped_level(
                 qc,

@@ -17,7 +17,10 @@ from typing import TYPE_CHECKING
 import pytest
 from qiskit.transpiler import Target
 
-from mqt.bench.targets.devices import get_available_device_names, get_device
+from mqt.bench.targets.devices import _registry as device_registry  # noqa: PLC2701
+from mqt.bench.targets.devices import get_available_device_names, get_available_devices, get_device
+from mqt.bench.targets.gatesets import _registry as gateset_registry  # noqa: PLC2701
+from mqt.bench.targets.gatesets import get_available_gateset_names, get_available_native_gatesets, get_gateset
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -29,7 +32,7 @@ class DeviceSpec:
 
     name: str
     num_qubits: int
-    single_gates: set[str] = field(default_factory=set)
+    single_qubit_gates: set[str] = field(default_factory=set)
     two_qubit_gates: set[str] = field(default_factory=set)
     # If *symmetric_connectivity* is *True*, require (q1, q0) whenever (q0, q1)
     symmetric_connectivity: Mapping[str, bool] = field(default_factory=dict)
@@ -99,45 +102,45 @@ DEVICE_SPECS: Sequence[DeviceSpec] = [
     DeviceSpec(
         name="ibm_falcon_27",
         num_qubits=27,
-        single_gates={"sx", "rz", "x", "measure"},
+        single_qubit_gates={"sx", "rz", "x", "measure"},
         two_qubit_gates={"cx"},
     ),
     DeviceSpec(
         name="ibm_falcon_127",
         num_qubits=127,
-        single_gates={"sx", "rz", "x", "measure"},
+        single_qubit_gates={"sx", "rz", "x", "measure"},
         two_qubit_gates={"cx"},
     ),
     DeviceSpec(
         name="ibm_eagle_127",
         num_qubits=127,
-        single_gates={"sx", "rz", "x", "measure"},
+        single_qubit_gates={"sx", "rz", "x", "measure"},
         two_qubit_gates={"ecr"},
     ),
     DeviceSpec(
         name="ibm_heron_133",
         num_qubits=133,
-        single_gates={"sx", "rz", "x", "measure"},
+        single_qubit_gates={"sx", "rz", "x", "measure"},
         two_qubit_gates={"cz"},
     ),
     DeviceSpec(
         name="ibm_heron_156",
         num_qubits=156,
-        single_gates={"sx", "rz", "x", "measure"},
+        single_qubit_gates={"sx", "rz", "x", "measure"},
         two_qubit_gates={"cz"},
     ),
     # ────────────────────────────────────────────────────────────────── IonQ ──
     DeviceSpec(
         name="ionq_aria_25",
         num_qubits=25,
-        single_gates={"gpi", "gpi2", "measure"},
+        single_qubit_gates={"gpi", "gpi2", "measure"},
         two_qubit_gates={"ms"},
         symmetric_connectivity={"ms": True},
     ),
     DeviceSpec(
         name="ionq_forte_36",
         num_qubits=36,
-        single_gates={"gpi", "gpi2", "measure"},
+        single_qubit_gates={"gpi", "gpi2", "measure"},
         two_qubit_gates={"zz"},
         symmetric_connectivity={"zz": True},
     ),
@@ -145,27 +148,27 @@ DEVICE_SPECS: Sequence[DeviceSpec] = [
     DeviceSpec(
         name="iqm_crystal_5",
         num_qubits=5,
-        single_gates={"r", "measure"},
+        single_qubit_gates={"r", "measure"},
         two_qubit_gates={"cz"},
         symmetric_connectivity={"cz": True},
     ),
     DeviceSpec(
         name="iqm_crystal_20",
         num_qubits=20,
-        single_gates={"r", "measure"},
+        single_qubit_gates={"r", "measure"},
         two_qubit_gates={"cz"},
     ),
     DeviceSpec(
         name="iqm_crystal_54",
         num_qubits=54,
-        single_gates={"r", "measure"},
+        single_qubit_gates={"r", "measure"},
         two_qubit_gates={"cz"},
     ),
     # ────────────────────────────────────────────────────────────── Quantinuum ──
     DeviceSpec(
         name="quantinuum_h2_56",
         num_qubits=56,
-        single_gates={"rx", "ry", "rz", "measure"},
+        single_qubit_gates={"rx", "ry", "rz", "measure"},
         two_qubit_gates={"rzz"},
         symmetric_connectivity={"rzz": True},
     ),
@@ -173,7 +176,7 @@ DEVICE_SPECS: Sequence[DeviceSpec] = [
     DeviceSpec(
         name="rigetti_ankaa_84",
         num_qubits=84,
-        single_gates={"rxpi", "rxpi2", "rxpi2dg", "rz", "measure"},
+        single_qubit_gates={"rxpi", "rxpi2", "rxpi2dg", "rz", "measure"},
         two_qubit_gates={"iswap"},
     ),
 ]
@@ -190,7 +193,7 @@ def test_device_spec(spec: DeviceSpec) -> None:
     assert target.num_qubits == spec.num_qubits
 
     # ── Single-qubit operations ──────────────────────────────────────────────
-    for gate in spec.single_gates:
+    for gate in spec.single_qubit_gates:
         _assert_single_qubit_gate_properties(target, gate, vendor=spec.name)
 
     # ── Two-qubit operations ────────────────────────────────────────────────
@@ -214,3 +217,82 @@ def test_get_unknown_device() -> None:
 
     with pytest.raises(ValueError, match=pattern):
         get_device(unknown_name)
+
+
+class _DummyTarget(Target):
+    """Very small Target subclass for tests."""
+
+    def __init__(self) -> None:
+        super().__init__(num_qubits=1)
+
+
+def test_dynamic_device_registration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A device registered at runtime should immediately be visible through the public helpers."""
+    monkeypatch.setattr(device_registry, "_REGISTRY", {}, raising=False)
+    get_available_device_names.cache_clear()
+    get_available_devices.cache_clear()
+
+    @device_registry.register("dummy_device")
+    def _dummy_factory() -> Target:
+        return _DummyTarget()
+
+    names = get_available_device_names()
+    assert "dummy_device" in names
+
+    dev = get_device("dummy_device")
+    assert isinstance(dev, _DummyTarget)
+
+    devs = get_available_devices()
+    assert isinstance(devs["dummy_device"], _DummyTarget)
+
+
+def test_dynamic_gateset_registration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A gateset registered at runtime should immediately be visible through the public helpers."""
+    monkeypatch.setattr(gateset_registry, "_REGISTRY", {}, raising=False)
+    get_available_gateset_names.cache_clear()
+    get_available_native_gatesets.cache_clear()
+
+    @gateset_registry.register("dummy_gateset")
+    def _dummy_factory() -> list[str]:
+        return ["dummy_gate"]
+
+    names = get_available_gateset_names()
+    assert "dummy_gateset" in names
+
+    gateset = get_gateset("dummy_gateset")
+    assert gateset == ["dummy_gate"]
+
+    gatesets = get_available_native_gatesets()
+    assert gatesets["dummy_gateset"] == gateset
+
+
+def test_duplicate_device_registration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Registering the same name twice must raise ValueError."""
+    monkeypatch.setattr(device_registry, "_REGISTRY", {}, raising=False)
+
+    @device_registry.register("dup_device")
+    def _factory1() -> Target:
+        return _DummyTarget()
+
+    # second registration with same name should fail
+    with pytest.raises(ValueError, match="already registered"):
+
+        @device_registry.register("dup_device")
+        def _factory2() -> Target:
+            return _DummyTarget()
+
+
+def test_duplicate_gateset_registration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Registering the same name twice must raise ValueError."""
+    monkeypatch.setattr(gateset_registry, "_REGISTRY", {}, raising=False)
+
+    @gateset_registry.register("dup_device")
+    def _factory1() -> list[str]:
+        return ["dummy_gate"]
+
+    # second registration with same name should fail
+    with pytest.raises(ValueError, match="already registered"):
+
+        @gateset_registry.register("dup_device")
+        def _factory2() -> list[str]:
+            return ["dummy_gate"]
