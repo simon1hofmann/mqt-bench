@@ -45,8 +45,6 @@ def get_supported_benchmarks() -> list[str]:
         "qnn",
         "qpeexact",
         "qpeinexact",
-        "qpeexact",
-        "qpeinexact",
         "quarkcardinality",
         "quarkcopula",
         "qwalk",
@@ -78,11 +76,11 @@ def _create_raw_circuit(
 
     Arguments:
         benchmark: QuantumCircuit or name of the benchmark for which the circuit is to be created.
-        circuit_size: size of the circuit to be created, required for benchmarks other than "shor".
-        benchmark_instance_name: instance specification needed for the "shor" benchmark.
+        circuit_size: Size of the circuit to be created, required for benchmarks other than "shor".
+        benchmark_instance_name: Instance specification needed for the "shor" benchmark.
 
     Returns:
-        QuantumCircuit: constructed quantum circuit based on the given parameters.
+        QuantumCircuit: Constructed quantum circuit based on the given parameters.
     """
     if isinstance(benchmark, QuantumCircuit):
         return benchmark
@@ -119,10 +117,10 @@ def _to_native_gates(
     the target description to optimize and synthesize the circuit.
 
     Arguments:
-            qc: quantum circuit to be compiled.
-            target: target quantum device for which the circuit will be compiled.
-            num_qubits: number of qubits for which the gate set is defined.
-            opt_level: optimization level to be used by the transpiler.
+            qc: Quantum circuit to be compiled.
+            target: Target quantum device for which the circuit will be compiled.
+            num_qubits: Number of qubits for which the gate set is defined.
+            opt_level: Optimization level to be used by the transpiler.
 
 
     Returns:
@@ -170,9 +168,9 @@ def _to_mapped(
     optimization level.
 
     Arguments:
-            qc: quantum circuit to be compiled.
-            device: target quantum device for which the circuit will be compiled.
-            opt_level: optimization level to be used by the transpiler.
+            qc: Quantum circuit to be compiled.
+            device: Target quantum device for which the circuit will be compiled.
+            opt_level: Optimization level to be used by the transpiler.
 
     Returns:
             QuantumCircuit: compiled quantum circuit for the specified target device.
@@ -188,6 +186,22 @@ def _to_mapped(
         optimization_level=opt_level,
         seed_transpiler=10,
     )
+
+
+def _normalise_opt_level(opt_level: int | None) -> int:
+    """Return a valid optimization level, using the module default when None.
+
+    Arguments:
+        opt_level: User-defined optimization level.
+
+    Returns:
+        Normalized optimization level.
+    """
+    level = 2 if opt_level is None else opt_level
+    if not 0 <= level <= 3:
+        msg = f"Invalid `opt_level` '{level}'. Must be in the range [0, 3]."
+        raise ValueError(msg)
+    return level
 
 
 def get_alg_benchmark(
@@ -212,7 +226,7 @@ def get_indep_benchmark(
     benchmark: str | QuantumCircuit,
     circuit_size: int | None = None,
     benchmark_instance_name: str | None = None,
-    opt_level: int | None = None,
+    opt_level: int | None = 2,
 ) -> QuantumCircuit:
     """Return a target-independent benchmark circuit.
 
@@ -220,13 +234,13 @@ def get_indep_benchmark(
             benchmark: QuantumCircuit or name of the benchmark to be generated
             circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
             benchmark_instance_name: Input selection for some benchmarks, namely "shor"
-            opt_level: optimization level to be used by the transpiler.
+            opt_level: Optimization level to be used by the transpiler.
 
     Returns:
             Qiskit::QuantumCircuit expressed in a generic basis gate set, still unmapped to any physical device.
     """
-    if opt_level is None:
-        opt_level = 2
+    opt_level = _normalise_opt_level(opt_level)
+
     qc = _create_raw_circuit(benchmark, circuit_size, benchmark_instance_name)
     return transpile(qc, optimization_level=opt_level, seed_transpiler=10)
 
@@ -235,7 +249,7 @@ def get_native_gates_benchmark(
     benchmark: str | QuantumCircuit,
     circuit_size: int | None = None,
     benchmark_instance_name: str | None = None,
-    opt_level: int | None = None,
+    opt_level: int | None = 2,
     target: Target = None,
 ) -> QuantumCircuit:
     """Return a benchmark compiled to the target's native gate set.
@@ -244,7 +258,7 @@ def get_native_gates_benchmark(
             benchmark: QuantumCircuit or name of the benchmark to be generated
             circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
             benchmark_instance_name: Input selection for some benchmarks, namely "shor"
-            opt_level: optimization level to be used by the transpiler.
+            opt_level: Optimization level to be used by the transpiler.
             target: `~qiskit.transpiler.target.Target` for the benchmark generation
 
     Returns:
@@ -254,8 +268,8 @@ def get_native_gates_benchmark(
         msg = "`target` must be supplied for the native-gates level."
         raise ValueError(msg)
 
-    if opt_level is None:
-        opt_level = 2
+    opt_level = _normalise_opt_level(opt_level)
+
     qc = _create_raw_circuit(benchmark, circuit_size, benchmark_instance_name)
     return _to_native_gates(qc, target=target, num_qubits=circuit_size, opt_level=opt_level)
 
@@ -264,7 +278,7 @@ def get_mapped_benchmark(
     benchmark: str | QuantumCircuit,
     circuit_size: int | None = None,
     benchmark_instance_name: str | None = None,
-    opt_level: int | None = None,
+    opt_level: int | None = 2,
     target: Target = None,
 ) -> QuantumCircuit:
     """Return a benchmark fully compiled and qubit-mapped to a device.
@@ -273,7 +287,7 @@ def get_mapped_benchmark(
             benchmark: QuantumCircuit or name of the benchmark to be generated
             circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
             benchmark_instance_name: Input selection for some benchmarks, namely "shor"
-            opt_level: optimization level to be used by the transpiler.
+            opt_level: Optimization level to be used by the transpiler.
             target: `~qiskit.transpiler.target.Target` for the benchmark generation
 
     Returns:
@@ -283,8 +297,8 @@ def get_mapped_benchmark(
         msg = "`target` must be supplied for the mapped level."
         raise ValueError(msg)
 
-    if opt_level is None:
-        opt_level = 2
+    opt_level = _normalise_opt_level(opt_level)
+
     qc = _create_raw_circuit(benchmark, circuit_size, benchmark_instance_name)
     return _to_mapped(qc, device=target, opt_level=opt_level)
 
@@ -304,7 +318,7 @@ def get_benchmark(
         level: Choice of level, either as a string ("alg", "indep", "nativegates" or "mapped") or as a number between 0-3 where 0 corresponds to "alg" level and 3 to "mapped" level
         circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
         benchmark_instance_name: Input selection for some benchmarks, namely "shor"
-        opt_level: optimization level to be used by the transpiler.
+        opt_level: Optimization level to be used by the transpiler.
         target: `~qiskit.transpiler.target.Target` for the benchmark generation (only used for "nativegates" and "mapped" level)
 
     Returns:
@@ -324,12 +338,6 @@ def get_benchmark(
         msg = f"Invalid level '{level}'. Must be one of {level_map.keys()}."
         raise ValueError(msg)
     norm = level_map[level]
-
-    if opt_level is None:
-        opt_level = 2
-    if opt_level not in range(4):
-        msg = f"Invalid opt_level '{opt_level}'. Must be in the range [0, 3]."
-        raise ValueError(msg)
 
     if norm == "alg":
         return get_alg_benchmark(
@@ -352,14 +360,10 @@ def get_benchmark(
             opt_level=opt_level,
             target=target,
         )
-    if norm == "mapped":
-        return get_mapped_benchmark(
-            benchmark,
-            circuit_size=circuit_size,
-            benchmark_instance_name=benchmark_instance_name,
-            opt_level=opt_level,
-            target=target,
-        )
-
-    msg = "Unhandled benchmark level."
-    raise RuntimeError(msg)
+    return get_mapped_benchmark(
+        benchmark,
+        circuit_size=circuit_size,
+        benchmark_instance_name=benchmark_instance_name,
+        opt_level=opt_level,
+        target=target,
+    )

@@ -358,7 +358,7 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_device_by_name("rigetti_ankaa_84"),
         )
 
-    match = re.escape("Invalid opt_level '4'. Must be in the range [0, 3].")
+    match = re.escape("Invalid `opt_level` '4'. Must be in the range [0, 3].")
     with pytest.raises(ValueError, match=match):
         get_benchmark(  # type: ignore[call-overload]
             "qpeexact",
@@ -777,3 +777,57 @@ def test_mapped_parity(benchmark: str, size: int, opt_level: int) -> None:
         target=target,
     )
     assert qc_wrapper == qc_ref
+
+
+@pytest.mark.parametrize(("benchmark", "size", "opt_level"), [("qft", 4, 4), ("ae", 3, -1)])
+def test_validate_opt_level(benchmark: str, size: int, opt_level: int) -> None:
+    """Test opt_level validation."""
+    match = re.escape(f"Invalid `opt_level` '{opt_level}'. Must be in the range [0, 3].")
+    with pytest.raises(ValueError, match=match):
+        get_indep_benchmark(
+            benchmark,
+            circuit_size=size,
+            opt_level=opt_level,
+        )
+
+    target = get_device_by_name("ibm_falcon_127")
+    with pytest.raises(ValueError, match=match):
+        get_native_gates_benchmark(
+            benchmark,
+            circuit_size=size,
+            opt_level=opt_level,
+            target=target,
+        )
+    with pytest.raises(ValueError, match=match):
+        get_mapped_benchmark(
+            benchmark,
+            circuit_size=size,
+            opt_level=opt_level,
+            target=target,
+        )
+    with pytest.raises(ValueError, match=match):
+        get_benchmark(
+            benchmark,
+            level="indep",
+            circuit_size=size,
+            opt_level=opt_level,
+            target=target,
+        )
+
+
+@pytest.mark.parametrize(("benchmark", "size", "opt_level"), [("qft", 4, 1)])
+def test_target_must_be_supplied(benchmark: str, size: int, opt_level: int) -> None:
+    """Test target must be supplied for mapped and native-gates levels."""
+    with pytest.raises(ValueError, match=r"`target` must be supplied for the native-gates level."):
+        get_native_gates_benchmark(
+            benchmark,
+            circuit_size=size,
+            opt_level=opt_level,
+        )
+    with pytest.raises(ValueError, match=r"`target` must be supplied for the mapped level."):
+        get_mapped_benchmark(
+            benchmark,
+            circuit_size=size,
+            opt_level=opt_level,
+            target=None,
+        )
