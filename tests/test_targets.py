@@ -28,7 +28,7 @@ class DeviceSpec:
     """Specification describing an expected device configuration."""
 
     name: str
-    num_qubits: int | None = None
+    num_qubits: int
     single_gates: set[str] = field(default_factory=set)
     two_qubit_gates: set[str] = field(default_factory=set)
     # If *symmetric_connectivity* is *True*, require (q1, q0) whenever (q0, q1)
@@ -55,8 +55,8 @@ def _assert_single_qubit_gate_properties(target: Target, gate_name: str, *, vend
         if dur is not None:
             assert dur >= 0, f"{vendor}: negative duration for '{gate_name}' on qubit {qubit}"
         err = getattr(props, "error", None)
-        if err is not None:
-            assert 0 <= err < 1, f"{vendor}: error outside [0,1) for '{gate_name}' on qubit {qubit}"
+        assert err is not None, f"{vendor}: error rate for '{gate_name}' on qubit {qubit} missing"
+        assert 0 <= err < 1, f"{vendor}: error outside [0,1) for '{gate_name}' on qubit {qubit}"
 
 
 def _assert_two_qubit_gate_properties(target: Target, gate_name: str, *, symmetric: bool, vendor: str) -> None:
@@ -70,8 +70,8 @@ def _assert_two_qubit_gate_properties(target: Target, gate_name: str, *, symmetr
         if dur is not None:
             assert dur > 0, f"{vendor}: non-positive duration for '{gate_name}' on ({q0}, {q1})"
         err = getattr(props, "error", None)
-        if err is not None:
-            assert 0 <= err < 1, f"{vendor}: error outside [0,1) for '{gate_name}' on ({q0}, {q1})"
+        assert err is not None, f"{vendor}: error rate for '{gate_name}' on ({q0}, {q1}) missing"
+        assert 0 <= err < 1, f"{vendor}: error outside [0,1) for '{gate_name}' on ({q0}, {q1})"
         if symmetric:
             assert (
                 q1,
@@ -90,8 +90,8 @@ def _assert_measure_properties(target: Target, *, vendor: str) -> None:
         if dur is not None:
             assert dur > 0, f"{vendor}: non-positive measure duration on qubit {qubit}"
         err = getattr(props, "error", None)
-        if err is not None:
-            assert 0 <= err < 1, f"{vendor}: measure error outside [0,1) on qubit {qubit}"
+        assert err is not None, f"{vendor}: error rate for qubit {qubit} missing"
+        assert 0 <= err < 1, f"{vendor}: measure error outside [0,1) on qubit {qubit}"
 
 
 DEVICE_SPECS: Sequence[DeviceSpec] = [
@@ -129,14 +129,14 @@ DEVICE_SPECS: Sequence[DeviceSpec] = [
     # ────────────────────────────────────────────────────────────────── IonQ ──
     DeviceSpec(
         name="ionq_aria_25",
-        num_qubits=None,  # accept catalogue default (>0)
+        num_qubits=25,
         single_gates={"gpi", "gpi2", "measure"},
         two_qubit_gates={"ms"},
         symmetric_connectivity={"ms": True},
     ),
     DeviceSpec(
         name="ionq_forte_36",
-        num_qubits=None,
+        num_qubits=36,
         single_gates={"gpi", "gpi2", "measure"},
         two_qubit_gates={"zz"},
         symmetric_connectivity={"zz": True},
@@ -187,10 +187,7 @@ def test_device_spec(spec: DeviceSpec) -> None:
     # ── Basic identity checks ───────────────────────────────────────────────
     assert isinstance(target, Target)
     assert target.description == spec.name
-    if spec.num_qubits is not None:
-        assert target.num_qubits == spec.num_qubits
-    else:
-        assert target.num_qubits > 0
+    assert target.num_qubits == spec.num_qubits
 
     # ── Single-qubit operations ──────────────────────────────────────────────
     for gate in spec.single_gates:
