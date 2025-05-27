@@ -17,7 +17,7 @@ from qiskit.circuit import Parameter
 from qiskit.circuit.library.standard_gates import get_standard_gate_name_mapping
 from qiskit.providers.fake_provider import GenericBackendV2
 
-from . import clifford_t, ibm, ionq, iqm, quantinuum, rigetti  # noqa: F401
+from . import clifford_t, ibm, ionq, iqm, quantinuum, rigetti
 from ._registry import all_gatesets, gateset_names, get_gateset_by_name
 
 if TYPE_CHECKING:
@@ -25,10 +25,14 @@ if TYPE_CHECKING:
 
 
 __all__ = [
+    "clifford_t",
     "get_available_gateset_names",
     "get_available_native_gatesets",
     "get_gateset",
     "get_target_for_gateset",
+    "ibm",
+    "iqm",
+    "quantinuum",
 ]
 
 

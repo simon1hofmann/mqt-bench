@@ -13,7 +13,7 @@ from __future__ import annotations
 from functools import cache
 from typing import TYPE_CHECKING
 
-from . import ibm, ionq, iqm, quantinuum, rigetti  # noqa: F401
+from . import ibm, ionq, iqm, quantinuum, rigetti
 from ._registry import all_devices, device_names, get_device_by_name
 
 if TYPE_CHECKING:
@@ -24,6 +24,11 @@ __all__ = [
     "get_available_device_names",
     "get_available_devices",
     "get_device",
+    "ibm",
+    "ionq",
+    "iqm",
+    "quantinuum",
+    "rigetti",
 ]
 
 
