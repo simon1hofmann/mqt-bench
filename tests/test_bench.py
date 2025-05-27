@@ -350,6 +350,15 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_device("rigetti_ankaa_84"),
             4,
         )
+    match = re.escape("`opt_level` must be specified for indep, nativegates, or mapped level.")
+    with pytest.raises(ValueError, match=match):
+        get_benchmark(
+            "qpeexact",
+            BenchmarkLevel.INDEP,
+            3,
+            get_device("rigetti_ankaa_84"),
+            None,
+        )
     match = re.escape(f"Unknown gateset 'wrong_gateset'. Available gatesets: {get_available_gateset_names()}")
     with pytest.raises(ValueError, match=match):
         get_benchmark(
