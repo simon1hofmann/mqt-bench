@@ -28,7 +28,10 @@ import numpy as np
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit.library import RXXGate
 
+from ._registry import register
 
+
+@register("quarkcardinality")
 def create_circuit(num_qubits: int, depth: int = 3) -> QuantumCircuit:
     """Returns a Qiskit circuit based on the cardinality circuit architecture from the QUARK framework.
 

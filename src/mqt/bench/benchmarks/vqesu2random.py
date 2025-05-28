@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ._registry import register
+
 try:
     from qiskit.circuit.library import efficient_su2
 except ImportError:
@@ -24,6 +26,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit
 
 
+@register("vqesu2random")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
     """Returns a quantum circuit implementing EfficientSU2 ansatz with random parameter values.
 

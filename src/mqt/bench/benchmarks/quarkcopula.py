@@ -29,7 +29,10 @@ from math import comb
 import numpy as np
 from qiskit.circuit import QuantumCircuit
 
+from ._registry import register
 
+
+@register("quarkcopula")
 def create_circuit(num_qubits: int, depth: int = 2) -> QuantumCircuit:
     """Returns a Qiskit circuit based on the copula circuit architecture from the QUARK framework.
 

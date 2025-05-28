@@ -20,6 +20,7 @@ from qiskit.compiler import transpile
 from qiskit.transpiler import Target
 from typing_extensions import assert_never
 
+from .benchmarks import get_available_benchmark_names
 from .targets.gatesets import get_target_for_gateset, ionq, rigetti
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -35,33 +36,6 @@ class BenchmarkLevel(Enum):
     INDEP = auto()
     NATIVEGATES = auto()
     MAPPED = auto()
-
-
-def get_supported_benchmarks() -> list[str]:
-    """Returns a list of all supported benchmarks."""
-    return [
-        "ae",
-        "bv",
-        "dj",
-        "ghz",
-        "graphstate",
-        "grover",
-        "qaoa",
-        "qft",
-        "qftentangled",
-        "qnn",
-        "qpeexact",
-        "qpeinexact",
-        "quarkcardinality",
-        "quarkcopula",
-        "qwalk",
-        "randomcircuit",
-        "shor",
-        "vqerealamprandom",
-        "vqesu2random",
-        "vqetwolocalrandom",
-        "wstate",
-    ]
 
 
 def get_module_for_benchmark(benchmark_name: str) -> ModuleType:
@@ -95,8 +69,8 @@ def _get_circuit(
         msg = "`circuit_size` must be a positive integer when `benchmark` is a str."
         raise ValueError(msg)
 
-    if benchmark not in get_supported_benchmarks():
-        msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_supported_benchmarks()}"
+    if benchmark not in get_available_benchmark_names():
+        msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_available_benchmark_names()}"
         raise ValueError(msg)
 
     lib = get_module_for_benchmark(benchmark)

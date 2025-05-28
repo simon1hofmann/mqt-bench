@@ -10,11 +10,21 @@
 
 from __future__ import annotations
 
+import importlib
+import importlib.resources as ir
 from functools import cache
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from . import _registry as device_registry
-from . import ibm, ionq, iqm, quantinuum, rigetti
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+_pkg_name = __name__
+for entry in ir.files(_pkg_name).iterdir():
+    path = cast("Path", entry)
+    if path.suffix == ".py" and path.stem not in {"__init__", "_registry"}:
+        importlib.import_module(f"{_pkg_name}.{path.stem}")
 
 if TYPE_CHECKING:
     from qiskit.transpiler import Target
@@ -25,11 +35,6 @@ __all__ = [
     "get_available_device_names",
     "get_available_devices",
     "get_device",
-    "ibm",
-    "ionq",
-    "iqm",
-    "quantinuum",
-    "rigetti",
 ]
 
 
