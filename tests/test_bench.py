@@ -766,6 +766,14 @@ def test_dynamic_benchmark_registration() -> None:
     benchmarks = get_available_benchmarks()
     assert benchmarks["dummy_benchmark"] == _dummy_factory
 
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"Unknown benchmark 'nonexistent_benchmark'. Available benchmarks: {get_available_benchmark_names()}"
+        ),
+    ):
+        create_circuit("nonexistent_benchmark", 3)
+
 
 def test_duplicate_benchmark_registration() -> None:
     """Registering the same name twice must raise ValueError."""
