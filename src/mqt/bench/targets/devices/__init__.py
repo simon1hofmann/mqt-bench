@@ -20,14 +20,13 @@ from . import _registry as device_registry
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from qiskit.transpiler import Target
+
 _pkg_name = __name__
 for entry in ir.files(_pkg_name).iterdir():
     path = cast("Path", entry)
     if path.suffix == ".py" and path.stem not in {"__init__", "_registry"}:
         importlib.import_module(f"{_pkg_name}.{path.stem}")
-
-if TYPE_CHECKING:
-    from qiskit.transpiler import Target
 
 
 __all__ = [
