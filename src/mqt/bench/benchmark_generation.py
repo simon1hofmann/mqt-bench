@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from enum import Enum, auto
 from importlib import import_module
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 from qiskit import generate_preset_pass_manager
 from qiskit.circuit import QuantumCircuit, SessionEquivalenceLibrary
@@ -69,9 +69,9 @@ def get_module_for_benchmark(benchmark_name: str) -> ModuleType:
     return import_module("mqt.bench.benchmarks." + benchmark_name)
 
 
-def _create_raw_circuit(
-    benchmark: str,
-    circuit_size: int,
+def _get_circuit(
+    benchmark: str | QuantumCircuit,
+    circuit_size: int | None,
 ) -> QuantumCircuit:
     """Creates a raw quantum circuit based on the specified benchmark.
 
@@ -85,12 +85,18 @@ def _create_raw_circuit(
     Returns:
         QuantumCircuit: Constructed quantum circuit based on the given parameters.
     """
-    if benchmark not in get_supported_benchmarks():
-        msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_supported_benchmarks()}"
+    if isinstance(benchmark, QuantumCircuit):
+        if circuit_size is not None:
+            msg = "`circuit_size` must be omitted or None when `benchmark` is a QuantumCircuit."
+            raise ValueError(msg)
+        return benchmark
+
+    if circuit_size is None or circuit_size <= 0:
+        msg = "`circuit_size` must be a positive integer when `benchmark` is a str."
         raise ValueError(msg)
 
-    if circuit_size <= 0:
-        msg = "`circuit_size` must be a positive integer."
+    if benchmark not in get_supported_benchmarks():
+        msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_supported_benchmarks()}"
         raise ValueError(msg)
 
     lib = get_module_for_benchmark(benchmark)
@@ -108,9 +114,23 @@ def _validate_opt_level(opt_level: int) -> None:
         raise ValueError(msg)
 
 
+@overload
+def get_benchmark_alg(
+    benchmark: str,
+    circuit_size: int,
+) -> QuantumCircuit: ...
+
+
+@overload
+def get_benchmark_alg(
+    benchmark: QuantumCircuit,
+    circuit_size: None = None,
+) -> QuantumCircuit: ...
+
+
 def get_benchmark_alg(
     benchmark: str | QuantumCircuit,
-    circuit_size: int,
+    circuit_size: int | None = None,
 ) -> QuantumCircuit:
     """Return an algorithm-level benchmark circuit.
 
@@ -121,14 +141,28 @@ def get_benchmark_alg(
     Returns:
             Qiskit::QuantumCircuit representing the raw benchmark circuit without any hardware-specific compilation or mapping.
     """
-    if isinstance(benchmark, QuantumCircuit):
-        return benchmark
-    return _create_raw_circuit(benchmark, circuit_size)
+    return _get_circuit(benchmark, circuit_size)
+
+
+@overload
+def get_benchmark_indep(
+    benchmark: str,
+    circuit_size: int,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
+
+
+@overload
+def get_benchmark_indep(
+    benchmark: QuantumCircuit,
+    circuit_size: None = None,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
 
 
 def get_benchmark_indep(
     benchmark: str | QuantumCircuit,
-    circuit_size: int,
+    circuit_size: int | None = None,
     opt_level: int = 2,
 ) -> QuantumCircuit:
     """Return a target-independent benchmark circuit.
@@ -143,14 +177,31 @@ def get_benchmark_indep(
     """
     _validate_opt_level(opt_level)
 
-    if isinstance(benchmark, str):
-        benchmark = _create_raw_circuit(benchmark, circuit_size)
-    return transpile(benchmark, optimization_level=opt_level, seed_transpiler=10)
+    circuit = _get_circuit(benchmark, circuit_size)
+    return transpile(circuit, optimization_level=opt_level, seed_transpiler=10)
+
+
+@overload
+def get_benchmark_native_gates(
+    benchmark: str,
+    circuit_size: int,
+    target: Target,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
+
+
+@overload
+def get_benchmark_native_gates(
+    benchmark: QuantumCircuit,
+    circuit_size: None,
+    target: Target,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
 
 
 def get_benchmark_native_gates(
     benchmark: str | QuantumCircuit,
-    circuit_size: int,
+    circuit_size: int | None,
     target: Target,
     opt_level: int = 2,
 ) -> QuantumCircuit:
@@ -167,17 +218,16 @@ def get_benchmark_native_gates(
     """
     _validate_opt_level(opt_level)
 
-    if isinstance(benchmark, str):
-        benchmark = _create_raw_circuit(benchmark, circuit_size)
+    circuit = _get_circuit(benchmark, circuit_size)
 
     if target.description == "clifford+t":
         from qiskit.transpiler import PassManager  # noqa: PLC0415
         from qiskit.transpiler.passes.synthesis import SolovayKitaev  # noqa: PLC0415
 
         # Transpile the circuit to single- and two-qubit gates including rotations
-        clifford_t_rotations = get_target_for_gateset("clifford+t+rotations", num_qubits=circuit_size)
+        clifford_t_rotations = get_target_for_gateset("clifford+t+rotations", num_qubits=circuit.num_qubits)
         compiled_for_sk = transpile(
-            benchmark,
+            circuit,
             target=clifford_t_rotations,
             optimization_level=opt_level,
             seed_transpiler=10,
@@ -185,8 +235,8 @@ def get_benchmark_native_gates(
         # Synthesize the rotations to Clifford+T gates
         # Measurements are removed and added back after the synthesis to avoid errors in the Solovay-Kitaev pass
         pm = PassManager(SolovayKitaev())
-        benchmark = pm.run(compiled_for_sk.remove_final_measurements(inplace=False))
-        benchmark.measure_all()
+        circuit = pm.run(compiled_for_sk.remove_final_measurements(inplace=False))
+        circuit.measure_all()
 
     if "rigetti" in target.description:
         rigetti.add_equivalences(SessionEquivalenceLibrary)
@@ -197,12 +247,30 @@ def get_benchmark_native_gates(
     pm.routing = None
     pm.scheduling = None
 
-    return pm.run(benchmark)
+    return pm.run(circuit)
+
+
+@overload
+def get_benchmark_mapped(
+    benchmark: str,
+    circuit_size: int,
+    target: Target,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
+
+
+@overload
+def get_benchmark_mapped(
+    benchmark: QuantumCircuit,
+    circuit_size: None,
+    target: Target,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
 
 
 def get_benchmark_mapped(
     benchmark: str | QuantumCircuit,
-    circuit_size: int,
+    circuit_size: int | None,
     target: Target,
     opt_level: int = 2,
 ) -> QuantumCircuit:
@@ -219,8 +287,7 @@ def get_benchmark_mapped(
     """
     _validate_opt_level(opt_level)
 
-    if isinstance(benchmark, str):
-        benchmark = _create_raw_circuit(benchmark, circuit_size)
+    circuit = _get_circuit(benchmark, circuit_size)
 
     if "rigetti" in target.description:
         rigetti.add_equivalences(SessionEquivalenceLibrary)
@@ -228,19 +295,39 @@ def get_benchmark_mapped(
         ionq.add_equivalences(SessionEquivalenceLibrary)
 
     return transpile(
-        benchmark,
+        circuit,
         target=target,
         optimization_level=opt_level,
         seed_transpiler=10,
     )
 
 
+@overload
 def get_benchmark(
-    benchmark: str | QuantumCircuit,
+    benchmark: str,
     level: BenchmarkLevel,
     circuit_size: int,
     target: Target | None = None,
-    opt_level: int | None = 2,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
+
+
+@overload
+def get_benchmark(
+    benchmark: QuantumCircuit,
+    level: BenchmarkLevel,
+    circuit_size: None,
+    target: Target | None = None,
+    opt_level: int = 2,
+) -> QuantumCircuit: ...
+
+
+def get_benchmark(
+    benchmark: str | QuantumCircuit,
+    level: BenchmarkLevel,
+    circuit_size: int | None = None,
+    target: Target | None = None,
+    opt_level: int = 2,
 ) -> QuantumCircuit:
     """Returns one benchmark as a qiskit.QuantumCircuit object.
 
@@ -255,19 +342,10 @@ def get_benchmark(
         Qiskit::QuantumCircuit object representing the benchmark with the selected options
     """
     if level is BenchmarkLevel.ALG:
-        print(type(benchmark))
-        if isinstance(benchmark, QuantumCircuit):
-            return benchmark
         return get_benchmark_alg(
             benchmark,
             circuit_size=circuit_size,
         )
-
-    if opt_level is None:
-        msg = "`opt_level` must be specified for indep, nativegates, or mapped level."
-        raise ValueError(msg)
-    _validate_opt_level(opt_level)
-
     if level is BenchmarkLevel.INDEP:
         return get_benchmark_indep(
             benchmark,
