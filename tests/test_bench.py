@@ -48,11 +48,16 @@ from mqt.bench.benchmark_generation import (
 from mqt.bench.benchmarks import (
     ae,
     bv,
+    cdkm_ripple_carry_adder,
     dj,
+    draper_qft_adder,
+    full_adder,
     ghz,
     graphstate,
     grover,
+    half_adder,
     hhl,
+    hrs_cumulative_multiplier,
     qaoa,
     qft,
     qftentangled,
@@ -63,7 +68,9 @@ from mqt.bench.benchmarks import (
     quarkcopula,
     qwalk,
     randomcircuit,
+    rg_qft_multiplier,
     shor,
+    vbe_ripple_carry_adder,
     vqerealamprandom,
     vqesu2random,
     vqetwolocalrandom,
@@ -94,11 +101,16 @@ def output_path() -> str:
     [
         (ae, 3),
         (bv, 3),
+        (cdkm_ripple_carry_adder, 4),
         (ghz, 2),
         (dj, 3),
+        (draper_qft_adder, 3),
+        (full_adder, 4),
         (graphstate, 3),
         (grover, 3),
+        (half_adder, 3),
         (hhl, 3),
+        (hrs_cumulative_multiplier, 4),
         (qaoa, 3),
         (qft, 3),
         (qftentangled, 3),
@@ -109,6 +121,8 @@ def output_path() -> str:
         (quarkcopula, 4),
         (qwalk, 3),
         (randomcircuit, 3),
+        (rg_qft_multiplier, 4),
+        (vbe_ripple_carry_adder, 3),
         (vqerealamprandom, 3),
         (vqesu2random, 3),
         (vqetwolocalrandom, 3),
@@ -152,6 +166,62 @@ def test_quantumcircuit_levels(benchmark: types.ModuleType, input_value: int) ->
                 0,
             )
             assert res_mapped
+
+
+@pytest.mark.parametrize(
+    ("benchmark", "input_value", "kind"),
+    [
+        (cdkm_ripple_carry_adder, 4, "half"),
+        (cdkm_ripple_carry_adder, 4, "full"),
+        (cdkm_ripple_carry_adder, 3, "fixed"),
+        (draper_qft_adder, 3, "half"),
+        (draper_qft_adder, 2, "fixed"),
+        (vbe_ripple_carry_adder, 3, "half"),
+        (vbe_ripple_carry_adder, 4, "full"),
+        (vbe_ripple_carry_adder, 2, "fixed"),
+    ],
+)
+def test_adder_circuits(benchmark: types.ModuleType, input_value: int, kind: str) -> None:
+    """Test the creation of the arithmetic circuits."""
+    qc = benchmark.create_circuit(input_value, kind)
+    assert qc.num_qubits == input_value
+
+
+@pytest.mark.parametrize(
+    ("benchmark", "input_value", "kind", "msg"),
+    [
+        (cdkm_ripple_carry_adder, 5, "half", "num_qubits must be an even integer ≥ 4."),
+        (cdkm_ripple_carry_adder, 3, "full", "num_qubits must be an even integer ≥ 4."),
+        (cdkm_ripple_carry_adder, 4, "fixed", "num_qubits must be an odd integer ≥ 3."),
+        (cdkm_ripple_carry_adder, 4, "unknown_adder", "kind must be 'full', 'half', or 'fixed'."),
+        (draper_qft_adder, 4, "half", "num_qubits must be an odd integer ≥ 3."),
+        (draper_qft_adder, 3, "fixed", "num_qubits must be an even integer ≥ 2."),
+        (draper_qft_adder, 3, "unknown_adder", "kind must be 'half' or 'fixed'."),
+        (full_adder, 5, None, "num_qubits must be an even integer ≥ 4."),
+        (half_adder, 4, None, "num_qubits must be an odd integer ≥ 3."),
+        (hrs_cumulative_multiplier, 5, None, "num_qubits must be ≥ 4 and divisible by 4."),
+        (rg_qft_multiplier, 5, None, "num_qubits must be ≥ 4 and divisible by 4."),
+        (vbe_ripple_carry_adder, 4, "half", "num_qubits must be an integer ≥ 3 and divisible by 3."),
+        (
+            vbe_ripple_carry_adder,
+            3,
+            "full",
+            re.escape("num_qubits must be an integer ≥ 4 and (num_qubits - 1) must be divisible by 3."),
+        ),
+        (
+            vbe_ripple_carry_adder,
+            4,
+            "fixed",
+            re.escape("num_qubits must be an integer ≥ 2 and (num_qubits + 1) must be divisible by 3."),
+        ),
+        (vbe_ripple_carry_adder, 3, "unknown_adder", "kind must be 'full', 'half', or 'fixed'."),
+    ],
+)
+def test_wrong_circuit_size(benchmark: types.ModuleType, input_value: int, kind: str | None, msg: str) -> None:
+    """Test the creation of the arithmetic circuits with faulty input values."""
+    params = (input_value,) + (() if kind is None else (kind,))
+    with pytest.raises(ValueError, match=msg):
+        benchmark.create_circuit(*params)
 
 
 def test_bv() -> None:
