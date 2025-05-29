@@ -11,7 +11,6 @@
 from __future__ import annotations
 
 from enum import Enum, auto
-from importlib import import_module
 from typing import TYPE_CHECKING, overload
 
 from qiskit import generate_preset_pass_manager
@@ -20,12 +19,10 @@ from qiskit.compiler import transpile
 from qiskit.transpiler import Target
 from typing_extensions import assert_never
 
-from .benchmarks import get_available_benchmark_names
+from .benchmarks import create_circuit, get_available_benchmark_names
 from .targets.gatesets import get_target_for_gateset, ionq, rigetti
 
 if TYPE_CHECKING:  # pragma: no cover
-    from types import ModuleType
-
     from qiskit.transpiler import Target
 
 
@@ -36,11 +33,6 @@ class BenchmarkLevel(Enum):
     INDEP = auto()
     NATIVEGATES = auto()
     MAPPED = auto()
-
-
-def get_module_for_benchmark(benchmark_name: str) -> ModuleType:
-    """Returns the module for a specific benchmark."""
-    return import_module("mqt.bench.benchmarks." + benchmark_name)
 
 
 def _get_circuit(
@@ -73,8 +65,7 @@ def _get_circuit(
         msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_available_benchmark_names()}"
         raise ValueError(msg)
 
-    lib = get_module_for_benchmark(benchmark)
-    return lib.create_circuit(circuit_size)
+    return create_circuit(benchmark, circuit_size)
 
 
 def _validate_opt_level(opt_level: int) -> None:

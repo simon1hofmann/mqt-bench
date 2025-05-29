@@ -34,7 +34,6 @@ from mqt.bench.benchmark_generation import (
     get_benchmark_indep,
     get_benchmark_mapped,
     get_benchmark_native_gates,
-    get_module_for_benchmark,
 )
 from mqt.bench.benchmarks import (
     benchmark_registry,
@@ -302,12 +301,6 @@ def test_clifford_t() -> None:
     pm = PassManager(GatesInBasis(target=clifford_t_target))
     pm.run(qc)
     assert pm.property_set["all_gates_in_basis"]
-
-
-def test_get_module_for_benchmark() -> None:
-    """Test the get_module_for_benchmark function."""
-    for benchmark in get_available_benchmark_names():
-        assert get_module_for_benchmark(benchmark) is not None
 
 
 def test_benchmark_helper_shor() -> None:
