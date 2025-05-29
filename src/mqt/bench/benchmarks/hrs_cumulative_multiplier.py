@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister
-from qiskit.circuit.library.arithmetic import HalfAdderGate, ModularAdderGate
+from qiskit.circuit.library.arithmetic import HalfAdderGate
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
@@ -42,16 +42,10 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
 
     # build multiplication circuit
     for i in range(num_state_qubits):
-        excess_qubits = max(0, num_state_qubits + i + 1 - num_result_qubits)
-        if excess_qubits == 0:
-            num_adder_qubits = num_state_qubits
-            this_controlled = controlled_adder
-        else:
-            num_adder_qubits = num_state_qubits - excess_qubits + 1
-            modular = ModularAdderGate(num_adder_qubits)
-            this_controlled = modular.control()
+        num_adder_qubits = num_state_qubits
+        this_controlled = controlled_adder
 
-        qr_list = [qr_a[i], *qr_b[:num_adder_qubits], *qr_out[i : num_state_qubits + i + 1 - excess_qubits]]
+        qr_list = [qr_a[i], *qr_b[:num_adder_qubits], *qr_out[i : num_state_qubits + i + 1]]
         qc.append(this_controlled, qr_list)
 
     qc.measure_all()
