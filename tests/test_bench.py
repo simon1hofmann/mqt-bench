@@ -18,7 +18,7 @@ from datetime import date
 from enum import Enum
 from importlib import metadata
 from pathlib import Path
-from typing import Any, Callable, NoReturn, cast
+from typing import TYPE_CHECKING, Any, Callable, NoReturn, cast
 
 import pytest
 from qiskit import QuantumCircuit, qpy
@@ -26,6 +26,9 @@ from qiskit.circuit import Parameter
 from qiskit.circuit.library import CXGate, HGate, RXGate, RZGate, XGate
 from qiskit.transpiler import InstructionProperties, PassManager, Target
 from qiskit.transpiler.passes import GatesInBasis
+
+if TYPE_CHECKING:  # pragma: no cover
+    import types
 
 from mqt.bench.benchmark_generation import (
     BenchmarkLevel,
@@ -51,15 +54,18 @@ from mqt.bench.output import (
     save_circuit,
     write_circuit,
 )
-from mqt.bench.targets import get_available_devices, get_available_native_gatesets
-from mqt.bench.targets.devices import get_available_device_names, get_device
-from mqt.bench.targets.gatesets import get_available_gateset_names, get_target_for_gateset
+from mqt.bench.targets.devices import get_available_device_names, get_available_devices, get_device
+from mqt.bench.targets.gatesets import (
+    get_available_gateset_names,
+    get_available_native_gatesets,
+    get_target_for_gateset,
+)
 
 
 @pytest.mark.parametrize(("benchmark_name", "create_circuit_func"), get_available_benchmarks().items())
 def test_quantumcircuit_levels(benchmark_name: str, create_circuit_func: Callable[[int, Any], QuantumCircuit]) -> None:
     """Test the creation of the algorithm level benchmarks for the benchmarks."""
-    input_value = 18 if benchmark_name == "shor" else 3
+    input_value = 18 if benchmark_name == "shor" else 4 if benchmark_name == "bmw_quark_copula" else 3
 
     qc = create_circuit_func(input_value)
     assert isinstance(qc, QuantumCircuit)
@@ -74,7 +80,7 @@ def test_quantumcircuit_levels(benchmark_name: str, create_circuit_func: Callabl
     assert res_indep
     assert res_indep.num_qubits == input_value
 
-    if qc.name != "shor":
+    if benchmark_name != "shor":
         for gateset_name in get_available_native_gatesets():
             gateset = get_target_for_gateset(gateset_name, num_qubits=qc.num_qubits)
             res_native_gates = get_benchmark_native_gates(
@@ -782,3 +788,34 @@ def test_duplicate_benchmark_registration() -> None:
         @benchmark_registry.register("dup_benchmark")
         def _dummy_factory2(num_qubits: int) -> QuantumCircuit:
             return QuantumCircuit(num_qubits, name=_dummy_factory2.__benchmark_name__)
+
+
+@pytest.mark.parametrize(
+    ("benchmark"),
+    ["qaoa", "qnn", "bmw_quark_cardinality", "bmw_quark_copula", "vqe_real_amp", "vqe_su2", "vqe_two_local"],
+)
+def test_benchmarks_with_parameters(benchmark: types.ModuleType) -> None:
+    """Test that benchmarks with parameters can be created."""
+    circuit_size = 4
+    qc = get_benchmark(benchmark, level=BenchmarkLevel.ALG, circuit_size=circuit_size, random_parameters=False)
+    assert len(qc.parameters) > 0, f"Benchmark {benchmark} should have parameters on the algorithm level."
+
+    res_indep = get_benchmark(benchmark, level=BenchmarkLevel.INDEP, circuit_size=circuit_size, random_parameters=False)
+    assert len(res_indep.parameters) > 0, f"Benchmark {benchmark} should have parameters on the independent level."
+
+    for gateset_name in get_available_native_gatesets():
+        if gateset_name == "clifford+t":
+            continue
+        gateset = get_target_for_gateset(gateset_name, num_qubits=qc.num_qubits)
+        res_native_gates = get_benchmark_native_gates(qc, None, gateset, 0, random_parameters=False)
+        assert len(res_native_gates.parameters) > 0, (
+            f"Benchmark {benchmark} should have parameters on the native gates level."
+        )
+
+        assert res_native_gates
+        assert res_native_gates.num_qubits == circuit_size
+
+    for device in get_available_devices().values():
+        res_mapped = get_benchmark_mapped(qc, None, device, 0, random_parameters=False)
+        assert res_mapped
+        assert len(res_mapped.parameters) > 0, f"Benchmark {benchmark} should have parameters on the mapped level."
