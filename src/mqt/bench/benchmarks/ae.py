@@ -12,11 +12,7 @@ from __future__ import annotations
 
 import numpy as np
 from qiskit.circuit import QuantumCircuit
-
-try:
-    from qiskit.circuit.library.phase_estimation import phase_estimation
-except ImportError:
-    from qiskit.circuit.library import PhaseEstimation as phase_estimation  # noqa: N813
+from qiskit.circuit.library import phase_estimation
 
 
 def create_circuit(num_qubits: int, probability: float = 0.2) -> QuantumCircuit:
