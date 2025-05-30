@@ -52,6 +52,7 @@ def create_circuit(num_qubits: int, kind: str = "fixed") -> QuantumCircuit:
         qr_sum = qr_b[:] + qr_z[:]
         num_qubits_qft = num_state_qubits + 1
     else:
+        qr_z = None
         qr_sum = qr_b[:]
         num_qubits_qft = num_state_qubits
 
