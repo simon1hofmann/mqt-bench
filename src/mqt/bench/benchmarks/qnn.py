@@ -10,7 +10,6 @@
 
 from __future__ import annotations
 
-import numpy as np
 from qiskit.circuit import QuantumCircuit
 
 try:
@@ -30,10 +29,7 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
     ansatz = real_amplitudes(num_qubits=num_qubits, reps=1)
 
     qc = QuantumCircuit(num_qubits)
-    feature_map = feature_map.assign_parameters([1 for _ in range(feature_map.num_parameters)])
 
-    rng = np.random.default_rng(10)
-    ansatz = ansatz.assign_parameters(rng.random(ansatz.num_parameters) * 2 * np.pi)
     qc.compose(feature_map, inplace=True)
     qc.compose(ansatz, inplace=True)
 

@@ -14,6 +14,7 @@ from enum import Enum, auto
 from importlib import import_module
 from typing import TYPE_CHECKING, overload
 
+import numpy as np
 from qiskit import generate_preset_pass_manager
 from qiskit.circuit import QuantumCircuit, SessionEquivalenceLibrary
 from qiskit.compiler import transpile
@@ -58,16 +59,16 @@ def get_supported_benchmarks() -> list[str]:
         "qnn",
         "qpeexact",
         "qpeinexact",
-        "quarkcardinality",
-        "quarkcopula",
+        "bmw_quark_cardinality",
+        "bmw_quark_copula",
         "qwalk",
         "randomcircuit",
         "rg_qft_multiplier",
         "shor",
         "vbe_ripple_carry_adder",
-        "vqerealamprandom",
-        "vqesu2random",
-        "vqetwolocalrandom",
+        "vqe_real_amp",
+        "vqe_su2",
+        "vqe_two_local",
         "wstate",
     ]
 
@@ -80,6 +81,7 @@ def get_module_for_benchmark(benchmark_name: str) -> ModuleType:
 def _get_circuit(
     benchmark: str | QuantumCircuit,
     circuit_size: int | None,
+    random_parameters: bool = True,
 ) -> QuantumCircuit:
     """Creates a raw quantum circuit based on the specified benchmark.
 
@@ -89,6 +91,7 @@ def _get_circuit(
     Arguments:
         benchmark: Name of the benchmark for which the circuit is to be created.
         circuit_size: Size of the circuit to be created, required for benchmarks other than "shor".
+        random_parameters: If True, assigns random parameters to the circuit's parameters if they exist.
 
     Returns:
         QuantumCircuit: Constructed quantum circuit based on the given parameters.
@@ -97,18 +100,25 @@ def _get_circuit(
         if circuit_size is not None:
             msg = "`circuit_size` must be omitted or None when `benchmark` is a QuantumCircuit."
             raise ValueError(msg)
-        return benchmark
+        qc = benchmark
+    else:
+        if circuit_size is None or circuit_size <= 0:
+            msg = "`circuit_size` must be a positive integer when `benchmark` is a str."
+            raise ValueError(msg)
 
-    if circuit_size is None or circuit_size <= 0:
-        msg = "`circuit_size` must be a positive integer when `benchmark` is a str."
-        raise ValueError(msg)
+        if benchmark not in get_supported_benchmarks():
+            msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_supported_benchmarks()}"
+            raise ValueError(msg)
 
-    if benchmark not in get_supported_benchmarks():
-        msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_supported_benchmarks()}"
-        raise ValueError(msg)
+        lib = get_module_for_benchmark(benchmark)
+        qc = lib.create_circuit(circuit_size)
 
-    lib = get_module_for_benchmark(benchmark)
-    return lib.create_circuit(circuit_size)
+    if len(qc.parameters) > 0 and random_parameters:
+        rng = np.random.default_rng(10)
+        param_dict = {param: rng.uniform(0, 2 * np.pi) for param in qc.parameters}
+        qc.assign_parameters(param_dict, inplace=True)
+        assert len(qc.parameters) == 0, "All parameters should be assigned."
+    return qc
 
 
 def _validate_opt_level(opt_level: int) -> None:
@@ -126,6 +136,7 @@ def _validate_opt_level(opt_level: int) -> None:
 def get_benchmark_alg(
     benchmark: str,
     circuit_size: int,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -133,23 +144,26 @@ def get_benchmark_alg(
 def get_benchmark_alg(
     benchmark: QuantumCircuit,
     circuit_size: None = None,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
 def get_benchmark_alg(
     benchmark: str | QuantumCircuit,
     circuit_size: int | None = None,
+    random_parameters: bool = True,
 ) -> QuantumCircuit:
     """Return an algorithm-level benchmark circuit.
 
     Arguments:
             benchmark: QuantumCircuit or name of the benchmark to be generated
             circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
+            random_parameters: If True, assigns random parameters to the circuit's parameters if they exist.
 
     Returns:
             Qiskit::QuantumCircuit representing the raw benchmark circuit without any hardware-specific compilation or mapping.
     """
-    return _get_circuit(benchmark, circuit_size)
+    return _get_circuit(benchmark, circuit_size, random_parameters)
 
 
 @overload
@@ -157,6 +171,7 @@ def get_benchmark_indep(
     benchmark: str,
     circuit_size: int,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -165,6 +180,7 @@ def get_benchmark_indep(
     benchmark: QuantumCircuit,
     circuit_size: None = None,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -172,6 +188,7 @@ def get_benchmark_indep(
     benchmark: str | QuantumCircuit,
     circuit_size: int | None = None,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit:
     """Return a target-independent benchmark circuit.
 
@@ -179,13 +196,14 @@ def get_benchmark_indep(
             benchmark: QuantumCircuit or name of the benchmark to be generated
             circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
             opt_level: Optimization level to be used by the transpiler.
+            random_parameters: If True, assigns random parameters to the circuit's parameters if they exist.
 
     Returns:
             Qiskit::QuantumCircuit expressed in a generic basis gate set, still unmapped to any physical device.
     """
     _validate_opt_level(opt_level)
 
-    circuit = _get_circuit(benchmark, circuit_size)
+    circuit = _get_circuit(benchmark, circuit_size, random_parameters)
     return transpile(circuit, optimization_level=opt_level, seed_transpiler=10)
 
 
@@ -195,6 +213,7 @@ def get_benchmark_native_gates(
     circuit_size: int,
     target: Target,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -204,6 +223,7 @@ def get_benchmark_native_gates(
     circuit_size: None,
     target: Target,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -212,6 +232,7 @@ def get_benchmark_native_gates(
     circuit_size: int | None,
     target: Target,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit:
     """Return a benchmark compiled to the target's native gate set.
 
@@ -220,13 +241,14 @@ def get_benchmark_native_gates(
             circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
             target: `~qiskit.transpiler.target.Target` for the benchmark generation
             opt_level: Optimization level to be used by the transpiler.
+            random_parameters: If True, assigns random parameters to the circuit's parameters if they exist.
 
     Returns:
             Qiskit::QuantumCircuit whose operations are restricted to ``target``'s native gate set but are **not** yet qubit-mapped to a concrete device connectivity.
     """
     _validate_opt_level(opt_level)
 
-    circuit = _get_circuit(benchmark, circuit_size)
+    circuit = _get_circuit(benchmark, circuit_size, random_parameters)
 
     if target.description == "clifford+t":
         from qiskit.transpiler import PassManager  # noqa: PLC0415
@@ -264,6 +286,7 @@ def get_benchmark_mapped(
     circuit_size: int,
     target: Target,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -273,6 +296,7 @@ def get_benchmark_mapped(
     circuit_size: None,
     target: Target,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -281,6 +305,7 @@ def get_benchmark_mapped(
     circuit_size: int | None,
     target: Target,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit:
     """Return a benchmark fully compiled and qubit-mapped to a device.
 
@@ -289,13 +314,14 @@ def get_benchmark_mapped(
             circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
             target: `~qiskit.transpiler.target.Target` for the benchmark generation
             opt_level: Optimization level to be used by the transpiler.
+            random_parameters: If True, assigns random parameters to the circuit's parameters if they exist.
 
     Returns:
             Qiskit::QuantumCircuit that has been decomposed and routed onto the connectivity described by ``target``.
     """
     _validate_opt_level(opt_level)
 
-    circuit = _get_circuit(benchmark, circuit_size)
+    circuit = _get_circuit(benchmark, circuit_size, random_parameters)
 
     if "rigetti" in target.description:
         rigetti.add_equivalences(SessionEquivalenceLibrary)
@@ -317,6 +343,7 @@ def get_benchmark(
     circuit_size: int,
     target: Target | None = None,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -327,6 +354,7 @@ def get_benchmark(
     circuit_size: None,
     target: Target | None = None,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit: ...
 
 
@@ -336,6 +364,7 @@ def get_benchmark(
     circuit_size: int | None = None,
     target: Target | None = None,
     opt_level: int = 2,
+    random_parameters: bool = True,
 ) -> QuantumCircuit:
     """Returns one benchmark as a qiskit.QuantumCircuit object.
 
@@ -345,6 +374,7 @@ def get_benchmark(
         circuit_size: Input for the benchmark creation, in most cases this is equal to the qubit number
         target: `~qiskit.transpiler.target.Target` for the benchmark generation (only used for "nativegates" and "mapped" level)
         opt_level: Optimization level to be used by the transpiler.
+        random_parameters: If True, assigns random parameters to the circuit's parameters if they exist.
 
     Returns:
         Qiskit::QuantumCircuit object representing the benchmark with the selected options
@@ -353,12 +383,14 @@ def get_benchmark(
         return get_benchmark_alg(
             benchmark,
             circuit_size=circuit_size,
+            random_parameters=random_parameters,
         )
     if level is BenchmarkLevel.INDEP:
         return get_benchmark_indep(
             benchmark,
             circuit_size,
             opt_level,
+            random_parameters,
         )
     if level is BenchmarkLevel.NATIVEGATES:
         return get_benchmark_native_gates(
@@ -366,6 +398,7 @@ def get_benchmark(
             circuit_size,
             target,
             opt_level,
+            random_parameters,
         )
     if level is BenchmarkLevel.MAPPED:
         return get_benchmark_mapped(
@@ -373,6 +406,7 @@ def get_benchmark(
             circuit_size,
             target,
             opt_level,
+            random_parameters,
         )
 
     assert_never(level)
