@@ -53,6 +53,8 @@ def get_supported_benchmarks() -> list[str]:
         "half_adder",
         "hhl",
         "hrs_cumulative_multiplier",
+        "modular_adder",
+        "multiplier",
         "qaoa",
         "qft",
         "qftentangled",

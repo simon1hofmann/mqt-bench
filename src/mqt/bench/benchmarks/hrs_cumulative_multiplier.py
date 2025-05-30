@@ -10,21 +10,21 @@
 
 from __future__ import annotations
 
-from qiskit.circuit import QuantumCircuit, QuantumRegister
-from qiskit.circuit.library.arithmetic import HalfAdderGate
+from qiskit.circuit import AncillaRegister, QuantumCircuit, QuantumRegister
+from qiskit.synthesis import adder_ripple_c04
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
     """Create a hrs cumulative multiplier circuit.
 
     Arguments:
-            num_qubits: Number of qubits of the returned quantum circuit, must be divisible by 4.
+            num_qubits: Number of qubits of the returned quantum circuit, (num_qubits - 1) must be divisible by 4.
 
     Returns:
            QuantumCircuit: The constructed hrs cumulative multiplier circuit.
     """
-    if num_qubits % 4 or num_qubits < 4:
-        msg = "num_qubits must be ≥ 4 and divisible by 4."
+    if (num_qubits - 1) % 4 or num_qubits < 5:
+        msg = "num_qubits must be an integer ≥ 5 and (num_qubits - 1) must be divisible by 4."
         raise ValueError(msg)
 
     num_state_qubits = num_qubits // 4
@@ -35,18 +35,28 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
     qr_b = QuantumRegister(num_state_qubits, name="b")
     qr_out = QuantumRegister(num_result_qubits, name="out")
 
-    qc = QuantumCircuit(qr_a, qr_b, qr_out)
+    # prepare adder as controlled gate
+    adder = adder_ripple_c04(num_state_qubits, kind="half")
 
-    adder = HalfAdderGate(num_state_qubits)
-    controlled_adder = adder.control()
+    # get the number of helper qubits needed
+    num_helper_qubits = adder.num_ancillas
+
+    # add helper qubits if required
+    qr_helper = AncillaRegister(num_helper_qubits, "helper") if num_helper_qubits else None
+
+    qregs = [qr_a, qr_b, qr_out] + ([qr_helper] if qr_helper else [])
 
     # build multiplication circuit
+    qc = QuantumCircuit(*qregs)
+
     for i in range(num_state_qubits):
         num_adder_qubits = num_state_qubits
-        this_controlled = controlled_adder
-
+        adder_for_current_step = adder
+        controlled_adder = adder_for_current_step.to_gate().control(1)
         qr_list = [qr_a[i], *qr_b[:num_adder_qubits], *qr_out[i : num_state_qubits + i + 1]]
-        qc.append(this_controlled, qr_list)
+        if num_helper_qubits > 0 and qr_helper:
+            qr_list.extend(qr_helper[:])
+        qc.append(controlled_adder, qr_list)
 
     qc.measure_all()
     qc.name = "hrs_cumulative_multiplier"

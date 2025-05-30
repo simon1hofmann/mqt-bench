@@ -10,12 +10,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from qiskit.synthesis import adder_qft_d00
-
-if TYPE_CHECKING:
-    from qiskit.circuit import QuantumCircuit
+import numpy as np
+from qiskit.circuit import QuantumCircuit, QuantumRegister
+from qiskit.synthesis import synth_qft_full
 
 
 def create_circuit(num_qubits: int, kind: str = "fixed") -> QuantumCircuit:
@@ -45,7 +42,36 @@ def create_circuit(num_qubits: int, kind: str = "fixed") -> QuantumCircuit:
         msg = "kind must be 'half' or 'fixed'."
         raise ValueError(msg)
 
-    qc = adder_qft_d00(num_state_qubits, kind)
+    qr_a = QuantumRegister(num_state_qubits, name="a")
+    qr_b = QuantumRegister(num_state_qubits, name="b")
+    qregs = [qr_a, qr_b]
+
+    if kind == "half":
+        qr_z = QuantumRegister(1, name="cout")
+        qregs.append(qr_z)
+        qr_sum = qr_b[:] + qr_z[:]
+        num_qubits_qft = num_state_qubits + 1
+    else:
+        qr_sum = qr_b[:]
+        num_qubits_qft = num_state_qubits
+
+    qc = QuantumCircuit(*qregs)
+
+    # build QFT adder circuit
+    qc.append(synth_qft_full(num_qubits_qft, do_swaps=False).to_gate(), qr_sum[:])
+
+    for j in range(num_state_qubits):
+        for k in range(num_state_qubits - j):
+            lam = np.pi / (2**k)
+            qc.cp(lam, qr_a[j], qr_b[j + k])
+
+    if kind == "half":
+        for j in range(num_state_qubits):
+            lam = np.pi / (2 ** (j + 1))
+            qc.cp(lam, qr_a[num_state_qubits - j - 1], qr_z[0])
+
+    qc.append(synth_qft_full(num_qubits_qft, do_swaps=False).inverse().to_gate(), qr_sum[:])
+
     qc.measure_all()
     qc.name = "draper_qft_adder"
 

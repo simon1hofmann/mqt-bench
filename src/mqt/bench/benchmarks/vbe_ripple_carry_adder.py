@@ -24,12 +24,12 @@ def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit
             kind: The kind of adder, can be ``"full"`` for a full adder, ``"half"`` for a half
-                                    adder, or ``"fixed"`` for a fixed-sized adder. A full adder includes both carry-in
-                                    and carry-out, a half only carry-out, and a fixed-sized adder neither carry-in
-                                    nor carry-out. Additionally, num_state_qubits - 1 ancillary qubits are added.
-                                    For example if num_qubits=13 and kind="full", there is one qubit for carry-in, one qubit
-                                    for carry-out, num_state_qubits=4 for each of the 2 registers, and num_state_qubits-1=3
-                                    ancillary qubits.
+                adder, or ``"fixed"`` for a fixed-sized adder. A full adder includes both carry-in
+                and carry-out, a half only carry-out, and a fixed-sized adder neither carry-in
+                nor carry-out. Additionally, num_state_qubits - 1 ancillary qubits are added.
+                For example if num_qubits=13 and kind="full", there is one qubit for carry-in, one qubit
+                for carry-out, num_state_qubits=4 for each of the 2 registers, and num_state_qubits-1=3
+                ancillary qubits.
 
     Returns:
            QuantumCircuit: The constructed vbe ripple-carry adder circuit.

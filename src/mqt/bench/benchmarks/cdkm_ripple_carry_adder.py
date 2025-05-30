@@ -10,8 +10,12 @@
 
 from __future__ import annotations
 
-from qiskit.circuit import QuantumCircuit
+from typing import TYPE_CHECKING
+
 from qiskit.synthesis import adder_ripple_c04
+
+if TYPE_CHECKING:
+    from qiskit.circuit import QuantumCircuit
 
 
 def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
@@ -43,10 +47,7 @@ def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
         msg = "kind must be 'full', 'half', or 'fixed'."
         raise ValueError(msg)
 
-    gate = adder_ripple_c04(num_state_qubits, kind)
-
-    qc = QuantumCircuit(gate.num_qubits)
-    qc.append(gate, qc.qubits)
+    qc = adder_ripple_c04(num_state_qubits, kind)
     qc.measure_all()
     qc.name = "cdkm_ripple_carry_adder"
 

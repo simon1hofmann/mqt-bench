@@ -10,12 +10,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from qiskit.synthesis import multiplier_qft_r17
-
-if TYPE_CHECKING:
-    from qiskit.circuit import QuantumCircuit
+import numpy as np
+from qiskit.circuit import QuantumCircuit, QuantumRegister
+from qiskit.circuit.library import PhaseGate
+from qiskit.synthesis import synth_qft_full
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
@@ -28,12 +26,34 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
            QuantumCircuit: The constructed rg qft multiplier circuit.
     """
     if num_qubits % 4 or num_qubits < 4:
-        msg = "num_qubits must be ≥ 4 and divisible by 4."
+        msg = "num_qubits must be an integer ≥ 4 and divisible by 4."
         raise ValueError(msg)
 
     num_state_qubits = num_qubits // 4
+    num_result_qubits = 2 * num_state_qubits
 
-    qc = multiplier_qft_r17(num_state_qubits)
+    # define the registers
+    qr_a = QuantumRegister(num_state_qubits, name="a")
+    qr_b = QuantumRegister(num_state_qubits, name="b")
+    qr_out = QuantumRegister(num_result_qubits, name="out")
+    qregs = [qr_a, qr_b, qr_out]
+
+    # build multiplication circuit
+    qc = QuantumCircuit(*qregs)
+
+    qc.append(synth_qft_full(num_result_qubits, do_swaps=False).to_gate(), qr_out[:])
+
+    for j in range(1, num_state_qubits + 1):
+        for i in range(1, num_state_qubits + 1):
+            for k in range(1, num_result_qubits + 1):
+                lam = (2 * np.pi) / (2 ** (i + j + k - 2 * num_state_qubits))
+                qc.append(
+                    PhaseGate(lam).control(2),
+                    [qr_a[num_state_qubits - j], qr_b[num_state_qubits - i], qr_out[k - 1]],
+                )
+
+    qc.append(synth_qft_full(num_result_qubits, do_swaps=False).inverse().to_gate(), qr_out[:])
+
     qc.measure_all()
     qc.name = "rg_qft_multiplier"
 

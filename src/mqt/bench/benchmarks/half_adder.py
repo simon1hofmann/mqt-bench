@@ -18,8 +18,8 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
     """Create a half adder circuit.
 
     Arguments:
-            num_qubits: number of qubits of the returned quantum circuit, must be odd and bigger than 3
-                    so that there is a carry-out bit and the rest can be divided by 2 for both registers.
+            num_qubits: Number of qubits of the returned quantum circuit, must be odd and bigger than 3
+                so that there is a carry-out bit and the rest can be divided by 2 for both registers.
 
     Returns:
            QuantumCircuit: The constructed half adder circuit.
