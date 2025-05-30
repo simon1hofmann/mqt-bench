@@ -14,8 +14,8 @@ from qiskit.circuit import QuantumCircuit
 from qiskit.synthesis import adder_ripple_c04
 
 
-def create_circuit(num_qubits: int, kind: str | None = "half") -> QuantumCircuit:
-    """Create a cdkm ripple-carry adder circuit.
+def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
+    """Create a CDKM ripple-carry adder circuit.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit
@@ -25,7 +25,7 @@ def create_circuit(num_qubits: int, kind: str | None = "half") -> QuantumCircuit
                adder neither carry-in or carry-out, but also has an additional helper qubit.
 
     Returns:
-           QuantumCircuit: The constructed cdkm ripple-carry adder circuit.
+           QuantumCircuit: The constructed CDKM ripple-carry adder circuit.
     """
     if kind in ["half", "full"]:
         if num_qubits % 2 or num_qubits < 4:

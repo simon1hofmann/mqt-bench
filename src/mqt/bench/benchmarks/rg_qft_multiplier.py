@@ -10,8 +10,12 @@
 
 from __future__ import annotations
 
-from qiskit.circuit import QuantumCircuit
+from typing import TYPE_CHECKING
+
 from qiskit.synthesis import multiplier_qft_r17
+
+if TYPE_CHECKING:
+    from qiskit.circuit import QuantumCircuit
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
@@ -28,10 +32,8 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
         raise ValueError(msg)
 
     num_state_qubits = num_qubits // 4
-    gate = multiplier_qft_r17(num_state_qubits)
 
-    qc = QuantumCircuit(gate.num_qubits)
-    qc.append(gate, qc.qubits)
+    qc = multiplier_qft_r17(num_state_qubits)
     qc.measure_all()
     qc.name = "rg_qft_multiplier"
 

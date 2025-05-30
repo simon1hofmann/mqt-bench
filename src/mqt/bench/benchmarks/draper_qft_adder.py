@@ -10,12 +10,16 @@
 
 from __future__ import annotations
 
-from qiskit.circuit import QuantumCircuit
+from typing import TYPE_CHECKING
+
 from qiskit.synthesis import adder_qft_d00
 
+if TYPE_CHECKING:
+    from qiskit.circuit import QuantumCircuit
 
-def create_circuit(num_qubits: int, kind: str | None = "half") -> QuantumCircuit:
-    """Create a draper qft adder circuit.
+
+def create_circuit(num_qubits: int, kind: str = "fixed") -> QuantumCircuit:
+    """Create a draper QFT adder circuit.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit
@@ -25,7 +29,7 @@ def create_circuit(num_qubits: int, kind: str | None = "half") -> QuantumCircuit
                addition modulo ``2 ** num_state_qubits``.
 
     Returns:
-           QuantumCircuit: The constructed draper qft adder circuit.
+           QuantumCircuit: The constructed draper QFT adder circuit.
     """
     if kind == "half":
         if num_qubits % 2 == 0 or num_qubits < 3:
@@ -41,10 +45,7 @@ def create_circuit(num_qubits: int, kind: str | None = "half") -> QuantumCircuit
         msg = "kind must be 'half' or 'fixed'."
         raise ValueError(msg)
 
-    gate = adder_qft_d00(num_state_qubits, kind)
-
-    qc = QuantumCircuit(gate.num_qubits)
-    qc.append(gate, qc.qubits)
+    qc = adder_qft_d00(num_state_qubits, kind)
     qc.measure_all()
     qc.name = "draper_qft_adder"
 

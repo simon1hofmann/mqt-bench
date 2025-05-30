@@ -10,11 +10,15 @@
 
 from __future__ import annotations
 
-from qiskit.circuit import QuantumCircuit
+from typing import TYPE_CHECKING
+
 from qiskit.synthesis import adder_ripple_v95
 
+if TYPE_CHECKING:
+    from qiskit.circuit import QuantumCircuit
 
-def create_circuit(num_qubits: int, kind: str | None = "half") -> QuantumCircuit:
+
+def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
     """Create a vbe ripple-carry adder circuit.
 
     Arguments:
@@ -49,10 +53,7 @@ def create_circuit(num_qubits: int, kind: str | None = "half") -> QuantumCircuit
         msg = "kind must be 'full', 'half', or 'fixed'."
         raise ValueError(msg)
 
-    gate = adder_ripple_v95(num_state_qubits, kind)
-
-    qc = QuantumCircuit(gate.num_qubits)
-    qc.append(gate, qc.qubits)
+    qc = adder_ripple_v95(num_state_qubits, kind)
     qc.measure_all()
     qc.name = "vbe_ripple_carry_adder"
 
