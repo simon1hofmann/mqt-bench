@@ -12,11 +12,7 @@ from __future__ import annotations
 
 import numpy as np
 from qiskit.circuit import AncillaRegister, QuantumCircuit, QuantumRegister
-
-try:
-    from qiskit.circuit.library.grover_operator import grover_operator
-except ImportError:
-    from qiskit.circuit.library import GroverOperator as grover_operator  # noqa: N813
+from qiskit.circuit.library import grover_operator
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:

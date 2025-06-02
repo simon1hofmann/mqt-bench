@@ -12,11 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-try:
-    from qiskit.circuit.library.n_local.n_local import n_local
-except ImportError:
-    from qiskit.circuit.library import TwoLocal as n_local  # noqa: N813
-
+from qiskit.circuit.library.n_local.n_local import n_local
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable
