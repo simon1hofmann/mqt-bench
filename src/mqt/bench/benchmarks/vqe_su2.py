@@ -12,9 +12,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ._registry import register_benchmark
-
 from qiskit.circuit.library import efficient_su2
+
+from ._registry import register_benchmark
 
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit

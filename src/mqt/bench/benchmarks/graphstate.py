@@ -12,10 +12,9 @@ from __future__ import annotations
 
 import networkx as nx
 from qiskit.circuit import QuantumCircuit, QuantumRegister
+from qiskit.circuit.library import GraphStateGate
 
 from ._registry import register_benchmark
-
-from qiskit.circuit.library import GraphStateGate
 
 
 @register_benchmark("graphstate")

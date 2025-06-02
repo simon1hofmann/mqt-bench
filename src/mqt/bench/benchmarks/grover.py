@@ -12,11 +12,9 @@ from __future__ import annotations
 
 import numpy as np
 from qiskit.circuit import AncillaRegister, QuantumCircuit, QuantumRegister
+from qiskit.circuit.library import grover_operator
 
 from ._registry import register_benchmark
-
-
-from qiskit.circuit.library import grover_operator
 
 
 @register_benchmark("grover")

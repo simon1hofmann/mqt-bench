@@ -12,9 +12,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ._registry import register_benchmark
-
 from qiskit.circuit.library.n_local.n_local import n_local
+
+from ._registry import register_benchmark
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable

@@ -12,10 +12,9 @@ from __future__ import annotations
 
 import numpy as np
 from qiskit.circuit import QuantumCircuit
+from qiskit.circuit.library import phase_estimation
 
 from ._registry import register_benchmark
-
-from qiskit.circuit.library import phase_estimation
 
 
 @register_benchmark("ae")
