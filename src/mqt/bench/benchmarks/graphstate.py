@@ -15,10 +15,7 @@ from qiskit.circuit import QuantumCircuit, QuantumRegister
 
 from ._registry import register_benchmark
 
-try:
-    from qiskit.circuit.library import GraphStateGate
-except ImportError:
-    from qiskit.circuit.library import GraphState as GraphStateGate
+from qiskit.circuit.library import GraphStateGate
 
 
 @register_benchmark("graphstate")

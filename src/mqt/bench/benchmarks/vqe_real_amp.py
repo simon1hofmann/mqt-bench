@@ -14,11 +14,7 @@ from typing import TYPE_CHECKING
 
 from ._registry import register_benchmark
 
-try:
-    from qiskit.circuit.library import real_amplitudes
-except ImportError:
-    from qiskit.circuit.library import RealAmplitudes as real_amplitudes  # noqa: N813
-
+from qiskit.circuit.library import real_amplitudes
 
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit

@@ -11,12 +11,7 @@
 from __future__ import annotations
 
 from qiskit.circuit import QuantumCircuit
-
-try:
-    from qiskit.circuit.library import real_amplitudes, z_feature_map
-except ImportError:
-    from qiskit.circuit.library import RealAmplitudes as real_amplitudes  # noqa: N813
-    from qiskit.circuit.library import ZZFeatureMap as z_feature_map  # noqa: N813
+from qiskit.circuit.library import real_amplitudes, z_feature_map
 
 from ._registry import register_benchmark
 

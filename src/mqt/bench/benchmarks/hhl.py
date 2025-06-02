@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 import numpy as np
-from qiskit import ClassicalRegister, QuantumCircuit, QuantumRegister
+from qiskit.circuit import ClassicalRegister, QuantumCircuit, QuantumRegister
 from qiskit.circuit.library import QFTGate
 
 from ._registry import register_benchmark

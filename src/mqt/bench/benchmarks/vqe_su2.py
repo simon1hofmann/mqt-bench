@@ -14,11 +14,7 @@ from typing import TYPE_CHECKING
 
 from ._registry import register_benchmark
 
-try:
-    from qiskit.circuit.library import efficient_su2
-except ImportError:
-    from qiskit.circuit.library import EfficientSU2 as efficient_su2  # noqa: N813
-
+from qiskit.circuit.library import efficient_su2
 
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit

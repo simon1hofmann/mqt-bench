@@ -15,10 +15,7 @@ from qiskit.circuit import QuantumCircuit
 
 from ._registry import register_benchmark
 
-try:
-    from qiskit.circuit.library.phase_estimation import phase_estimation
-except ImportError:
-    from qiskit.circuit.library import PhaseEstimation as phase_estimation  # noqa: N813
+from qiskit.circuit.library import phase_estimation
 
 
 @register_benchmark("ae")
