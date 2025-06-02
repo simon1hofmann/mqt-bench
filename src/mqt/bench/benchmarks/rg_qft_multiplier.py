@@ -24,12 +24,11 @@ from __future__ import annotations
 
 import numpy as np
 from qiskit.circuit import QuantumCircuit, QuantumRegister
-from qiskit.circuit.library import PhaseGate
 from qiskit.synthesis import synth_qft_full
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a rg qft multiplier circuit.
+    """Create a rg qft multiplier circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/multipliers/rg_qft_multiplier.py.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit, must be divisible by 4.
@@ -59,9 +58,10 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
         for i in range(1, num_state_qubits + 1):
             for k in range(1, num_result_qubits + 1):
                 lam = (2 * np.pi) / (2 ** (i + j + k - 2 * num_state_qubits))
-                qc.append(
-                    PhaseGate(lam).control(2),
-                    [qr_a[num_state_qubits - j], qr_b[num_state_qubits - i], qr_out[k - 1]],
+                qc.mcp(
+                    lam,
+                    [qr_a[num_state_qubits - j], qr_b[num_state_qubits - i]],
+                    qr_out[k - 1],
                 )
 
     qc.append(synth_qft_full(num_result_qubits, do_swaps=False).inverse().to_gate(), qr_out[:])

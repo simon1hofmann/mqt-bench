@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
-    """Create a CDKM ripple-carry adder circuit.
+    """Create a CDKM ripple-carry adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/cdkm_ripple_carry_adder.py.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit

@@ -15,7 +15,7 @@ from qiskit.circuit.library import FullAdderGate
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a full adder circuit.
+    """Create a full adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/adder.py.
 
     Arguments:
             num_qubits: number of qubits of the returned quantum circuit, must be even and bigger than 4

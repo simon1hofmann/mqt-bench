@@ -15,7 +15,7 @@ from qiskit.circuit.library import MultiplierGate
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a multiplier circuit.
+    """Create a multiplier circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/multipliers/multiplier.py.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit, must be divisible by 4.

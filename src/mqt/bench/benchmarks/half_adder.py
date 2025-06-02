@@ -15,7 +15,7 @@ from qiskit.circuit.library import HalfAdderGate
 
 
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a half adder circuit.
+    """Create a half adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/adder.py.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit, must be odd and bigger than 3
