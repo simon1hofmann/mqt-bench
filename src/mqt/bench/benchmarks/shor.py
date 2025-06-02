@@ -34,7 +34,7 @@ from qiskit.circuit import Instruction, ParameterVector, QuantumCircuit, Quantum
 from qiskit.circuit.library import QFTGate
 from qiskit.synthesis import synth_qft_full
 
-from ._registry import register
+from ._registry import register_benchmark
 
 _SIZE_TO_PARAMS = {
     18: (15, 4),  # "small"
@@ -44,7 +44,7 @@ _SIZE_TO_PARAMS = {
 }
 
 
-@register("shor")
+@register_benchmark("shor")
 def create_circuit(circuit_size: int) -> QuantumCircuit:
     """Construct Shor's circuit based on total qubit count.
 

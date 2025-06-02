@@ -12,44 +12,62 @@ from __future__ import annotations
 
 import importlib
 import importlib.resources as ir
-from functools import cache
 from typing import TYPE_CHECKING, Any, cast
 
 from . import _registry as benchmark_registry
+from ._registry import register_benchmark
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from qiskit.circuit import QuantumCircuit
 
-_pkg_name = __name__
-for entry in ir.files(_pkg_name).iterdir():
-    path = cast("Path", entry)
-    if path.suffix == ".py" and path.stem not in {"__init__", "_registry"}:
-        importlib.import_module(f"{_pkg_name}.{path.stem}")
+
+_DISCOVERED_BENCHMARKS: set[str] = {
+    path.stem
+    for entry in ir.files(__package__).iterdir()
+    if (path := cast("Path", entry)).is_file() and path.suffix == ".py" and not path.stem.startswith("_")
+}
 
 __all__ = [
-    "benchmark_registry",
     "create_circuit",
     "get_available_benchmark_names",
-    "get_available_benchmarks",
+    "register_benchmark",
 ]
 
 
-@cache
-def get_available_benchmarks() -> dict[str, benchmark_registry._BenchmarkFactory]:
-    """Return a dict of available benchmarks."""
-    return benchmark_registry.all_benchmarks()
+def _ensure_loaded(benchmark_name: str) -> None:
+    """Ensures that the specified benchmark is loaded and registered.
+
+    If the benchmark is already registered, the function exits early. If the benchmark
+    is not supported or cannot be found, a ValueError is raised. Otherwise, the module
+    corresponding to the benchmark is imported, triggering its registration.
+
+    Args:
+        benchmark_name (str): The name of the benchmark to ensure is loaded. It must be a valid and supported benchmark name.
+
+    Raises:
+        ValueError: If the provided benchmark name is not supported or not available in the discovered benchmarks.
+    """
+    if benchmark_name in benchmark_registry.benchmark_names():
+        return  # already imported and registered
+
+    if benchmark_name not in _DISCOVERED_BENCHMARKS:
+        msg = (
+            f"'{benchmark_name}' is not a supported benchmark. Available benchmarks: {get_available_benchmark_names()}"
+        )
+        raise ValueError(msg)
+
+    importlib.import_module(f"{__package__}.{benchmark_name}")
 
 
-@cache
 def get_available_benchmark_names() -> list[str]:
     """Return a list of available benchmark names."""
-    return benchmark_registry.benchmark_names()
+    return sorted(_DISCOVERED_BENCHMARKS | set(benchmark_registry.benchmark_names())).copy()
 
 
 # ruff: noqa: ANN401
-def create_circuit(benchmark_name: str, /, *args: Any, **kwargs: Any) -> QuantumCircuit:
+def create_circuit(benchmark_name: str, circuit_size: int, /, *args: Any, **kwargs: Any) -> QuantumCircuit:
     """Creates and returns a quantum circuit based on the specified benchmark name and additional arguments.
 
     The function retrieves the associated factory for the given
@@ -58,6 +76,7 @@ def create_circuit(benchmark_name: str, /, *args: Any, **kwargs: Any) -> Quantum
 
     Args:
         benchmark_name: The name of the benchmark to create the circuit for.
+        circuit_size: The size of the quantum circuit to create.
         *args: Positional arguments to be passed to the benchmark's factory method.
         **kwargs: Keyword arguments to be passed to the benchmark's factory method.
 
@@ -69,9 +88,10 @@ def create_circuit(benchmark_name: str, /, *args: Any, **kwargs: Any) -> Quantum
         ValueError: If the specified benchmark name is not in the list of available
         benchmarks.
     """
-    try:
-        factory = get_available_benchmarks()[benchmark_name]
-        return factory(*args, **kwargs)
-    except KeyError:
-        msg = f"Unknown benchmark '{benchmark_name}'. Available benchmarks: {get_available_benchmark_names()}"
-        raise ValueError(msg) from None
+    if circuit_size <= 0:
+        msg = "`circuit_size` must be a positive integer when `benchmark` is a str."
+        raise ValueError(msg)
+
+    _ensure_loaded(benchmark_name)
+    factory = benchmark_registry.get_benchmark_by_name(benchmark_name)
+    return factory(circuit_size, *args, **kwargs)

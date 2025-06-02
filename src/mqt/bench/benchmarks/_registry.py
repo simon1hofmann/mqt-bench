@@ -14,12 +14,12 @@ from typing import Callable
 
 from qiskit.circuit import QuantumCircuit
 
-_BenchmarkFactory = Callable[[int], QuantumCircuit]
+_BenchmarkFactory = Callable[..., QuantumCircuit]
 _REGISTRY: dict[str, _BenchmarkFactory] = {}
 
 
-def register(benchmark_name: str) -> Callable[[_BenchmarkFactory], _BenchmarkFactory]:
-    """Decorator to register a benchmark factory under a unique benchmark_name.
+def register_benchmark(benchmark_name: str) -> Callable[[_BenchmarkFactory], _BenchmarkFactory]:
+    """Decorator to register a benchmark factory under a unique `benchmark_name`.
 
     Arguments:
         benchmark_name: unique identifier for the benchmark (e.g., ``"ae"``).
@@ -41,15 +41,21 @@ def register(benchmark_name: str) -> Callable[[_BenchmarkFactory], _BenchmarkFac
     return _decorator
 
 
-def benchmark_names() -> list[str]:
-    """Return all registered benchmark names.
+def get_benchmark_by_name(benchmark_name: str) -> _BenchmarkFactory:
+    """Return the create_circuit function for a `benchmark_name`.
+
+    Arguments:
+        benchmark_name: identifier used during registration.
 
     Returns:
-        List of strings in registration order.
+        create_circuit() function for the benchmark.
+
+    Raises:
+        KeyError: if the benchmark name is unknown.
     """
+    return _REGISTRY[benchmark_name]
+
+
+def benchmark_names() -> list[str]:
+    """Return all registered benchmark names."""
     return list(_REGISTRY)
-
-
-def all_benchmarks() -> dict[str, _BenchmarkFactory]:
-    """Return a *shallow copy* {name: factory}. No circuits built."""
-    return _REGISTRY.copy()

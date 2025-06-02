@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 from qiskit.circuit import QuantumCircuit
 
-from ._registry import register
+from ._registry import register_benchmark
 
 try:
     from qiskit.circuit.library.phase_estimation import phase_estimation
@@ -21,7 +21,7 @@ except ImportError:
     from qiskit.circuit.library import PhaseEstimation as phase_estimation  # noqa: N813
 
 
-@register("ae")
+@register_benchmark("ae")
 def create_circuit(num_qubits: int, probability: float = 0.2) -> QuantumCircuit:
     """Returns a quantum circuit implementing Quantum Amplitude Estimation.
 

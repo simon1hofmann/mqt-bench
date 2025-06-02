@@ -10,50 +10,55 @@
 
 from __future__ import annotations
 
+import copy
 import importlib
 import importlib.resources as ir
 from functools import cache
 from typing import TYPE_CHECKING, cast
 
 from . import _registry as device_registry
+from ._registry import register_device
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from qiskit.transpiler import Target
 
-_pkg_name = __name__
-for entry in ir.files(_pkg_name).iterdir():
-    path = cast("Path", entry)
-    if path.suffix == ".py" and path.stem not in {"__init__", "_registry"}:
-        importlib.import_module(f"{_pkg_name}.{path.stem}")
-
-
 __all__ = [
-    "device_registry",
     "get_available_device_names",
-    "get_available_devices",
     "get_device",
+    "register_device",
 ]
 
+for entry in ir.files(__package__).iterdir():
+    if (path := cast("Path", entry)).is_file() and path.suffix == ".py" and not path.stem.startswith("_"):
+        importlib.import_module(f"{__package__}.{path.stem}")
+        __all__ += [f"{path.stem}"]  # noqa: PLE0604
 
-@cache
-def get_available_devices() -> dict[str, Target]:
-    """Return a dict of available devices."""
-    return device_registry.all_devices()
 
-
-@cache
 def get_available_device_names() -> list[str]:
     """Return a list of available device names."""
-    return device_registry.device_names()
+    return device_registry.device_names().copy()
 
 
 @cache
-def get_device(device_name: str) -> Target:
-    """Return the Target object for a given device name."""
+def _get_device(device_name: str) -> Target:
+    """Internal cacheable function to get a device by name.
+
+    Arguments:
+        device_name: Name of the device.
+    """
     try:
         return device_registry.get_device_by_name(device_name)
     except KeyError:
         msg = f"Unknown device '{device_name}'. Available devices: {get_available_device_names()}"
         raise ValueError(msg) from None
+
+
+def get_device(device_name: str) -> Target:
+    """Get a deepcopy of a device by name.
+
+    Arguments:
+        device_name: Name of the device.
+    """
+    return copy.deepcopy(_get_device(device_name))

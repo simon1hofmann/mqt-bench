@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import copy
 import importlib
 import importlib.resources as ir
 from functools import cache
@@ -20,6 +21,7 @@ from qiskit.circuit.library.standard_gates import get_standard_gate_name_mapping
 from qiskit.providers.fake_provider import GenericBackendV2
 
 from . import _registry as gateset_registry
+from ._registry import register_gateset
 from .ionq import GPI2Gate, GPIGate, MSGate, ZZGate
 from .rigetti import RXPI2DgGate, RXPI2Gate, RXPIGate
 
@@ -28,37 +30,31 @@ if TYPE_CHECKING:
 
     from qiskit.transpiler import Target
 
-_pkg_name = __name__
-for entry in ir.files(_pkg_name).iterdir():
-    path = cast("Path", entry)
-    if path.suffix == ".py" and path.stem not in {"__init__", "_registry"}:
-        importlib.import_module(f"{_pkg_name}.{path.stem}")
-
-
 __all__ = [
-    "gateset_registry",
     "get_available_gateset_names",
-    "get_available_native_gatesets",
     "get_gateset",
     "get_target_for_gateset",
+    "register_gateset",
 ]
 
+for entry in ir.files(__package__).iterdir():
+    if (path := cast("Path", entry)).is_file() and path.suffix == ".py" and not path.stem.startswith("_"):
+        importlib.import_module(f"{__package__}.{path.stem}")
+        __all__ += [f"{path.stem}"]  # noqa: PLE0604
 
-@cache
-def get_available_native_gatesets() -> dict[str, list[str]]:
-    """Return a dict of available native gatesets."""
-    return gateset_registry.all_gatesets()
 
-
-@cache
 def get_available_gateset_names() -> list[str]:
     """Return a list of available gateset names."""
-    return gateset_registry.gateset_names()
+    return gateset_registry.gateset_names().copy()
 
 
 @cache
-def get_gateset(gateset_name: str) -> list[str]:
-    """Return the gateset for a given gateset name."""
+def _get_gateset(gateset_name: str) -> list[str]:
+    """Internal cacheable function to return the gateset for a given gateset name.
+
+    Arguments:
+        gateset_name: Name of the gateset.
+    """
     try:
         return gateset_registry.get_gateset_by_name(gateset_name)
     except KeyError:
@@ -66,8 +62,17 @@ def get_gateset(gateset_name: str) -> list[str]:
         raise ValueError(msg) from None
 
 
+def get_gateset(gateset_name: str) -> list[str]:
+    """Return the gateset for a given gateset name.
+
+    Arguments:
+        gateset_name: Name of the gateset.
+    """
+    return _get_gateset(gateset_name).copy()
+
+
 @cache
-def get_target_for_gateset(name: str, num_qubits: int) -> Target:
+def _get_target_for_gateset(name: str, num_qubits: int) -> Target:
     """Return the Target object for a given native gateset name."""
     gates = get_gateset(name)
 
@@ -105,3 +110,8 @@ def get_target_for_gateset(name: str, num_qubits: int) -> Target:
             raise ValueError(msg) from None
 
     return target
+
+
+def get_target_for_gateset(name: str, num_qubits: int) -> Target:
+    """Return a deepcopy of a Target object for a given native gateset name."""
+    return copy.deepcopy(_get_target_for_gateset(name, num_qubits))

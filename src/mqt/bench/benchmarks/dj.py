@@ -13,7 +13,7 @@ from __future__ import annotations
 import numpy as np
 from qiskit.circuit import QuantumCircuit
 
-from ._registry import register
+from ._registry import register_benchmark
 
 
 def dj_oracle(case: str, n: int) -> QuantumCircuit:
@@ -71,7 +71,7 @@ def dj_algorithm(oracle: QuantumCircuit, n: int) -> QuantumCircuit:
     return dj_circuit
 
 
-@register("dj")
+@register_benchmark("dj")
 def create_circuit(num_qubits: int, balanced: bool = True) -> QuantumCircuit:
     """Returns a quantum circuit implementing the Deutsch-Josza algorithm.
 

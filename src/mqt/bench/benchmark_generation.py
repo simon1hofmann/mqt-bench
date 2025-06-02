@@ -20,7 +20,7 @@ from qiskit.compiler import transpile
 from qiskit.transpiler import Target
 from typing_extensions import assert_never
 
-from .benchmarks import create_circuit, get_available_benchmark_names
+from .benchmarks import create_circuit
 from .targets.gatesets import get_target_for_gateset, ionq, rigetti
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -61,14 +61,9 @@ def _get_circuit(
         qc = benchmark
 
     else:
-        if circuit_size is None or circuit_size <= 0:
-            msg = "`circuit_size` must be a positive integer when `benchmark` is a str."
+        if circuit_size is None:
+            msg = "`circuit_size` cannot be None when `benchmark` is a str."
             raise ValueError(msg)
-
-        if benchmark not in get_available_benchmark_names():
-            msg = f"'{benchmark}' is not a supported benchmark. Valid names: {get_available_benchmark_names()}"
-            raise ValueError(msg)
-
         qc = create_circuit(benchmark, circuit_size)
 
     if len(qc.parameters) > 0 and random_parameters:

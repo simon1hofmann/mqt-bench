@@ -12,10 +12,10 @@ from __future__ import annotations
 
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 
-from ._registry import register
+from ._registry import register_benchmark
 
 
-@register("qwalk")
+@register_benchmark("qwalk")
 def create_circuit(
     num_qubits: int,
     depth: int = 3,
