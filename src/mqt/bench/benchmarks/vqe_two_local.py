@@ -14,12 +14,15 @@ from typing import TYPE_CHECKING
 
 from qiskit.circuit.library.n_local.n_local import n_local
 
+from ._registry import register_benchmark
+
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable
 
     from qiskit.circuit import Gate, QuantumCircuit
 
 
+@register_benchmark("vqe_two_local")
 def create_circuit(
     num_qubits: int,
     rotation_blocks: str | Gate | Iterable[str | Gate] = "ry",

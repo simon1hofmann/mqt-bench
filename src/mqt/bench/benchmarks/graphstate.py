@@ -14,7 +14,10 @@ import networkx as nx
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 from qiskit.circuit.library import GraphStateGate
 
+from ._registry import register_benchmark
 
+
+@register_benchmark("graphstate")
 def create_circuit(num_qubits: int, degree: int = 2) -> QuantumCircuit:
     """Returns a quantum circuit implementing a graph state.
 

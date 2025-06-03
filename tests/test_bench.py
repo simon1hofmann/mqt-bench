@@ -11,29 +11,24 @@
 from __future__ import annotations
 
 import builtins
+import functools
 import io
 import re
 from datetime import date
+from enum import Enum
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, NoReturn, cast
 
+import pytest
+from qiskit import QuantumCircuit, qpy
 from qiskit.circuit import Parameter
 from qiskit.circuit.library import CXGate, HGate, RXGate, RZGate, XGate
 from qiskit.transpiler import InstructionProperties, PassManager, Target
 from qiskit.transpiler.passes import GatesInBasis
 
-from mqt.bench.targets.devices import get_available_device_names, get_device
-from mqt.bench.targets.gatesets import get_available_gateset_names, get_target_for_gateset
-
 if TYPE_CHECKING:  # pragma: no cover
     import types
-
-import functools
-from enum import Enum
-
-import pytest
-from qiskit import QuantumCircuit, qpy
 
 from mqt.bench.benchmark_generation import (
     BenchmarkLevel,
@@ -42,41 +37,12 @@ from mqt.bench.benchmark_generation import (
     get_benchmark_indep,
     get_benchmark_mapped,
     get_benchmark_native_gates,
-    get_module_for_benchmark,
-    get_supported_benchmarks,
 )
 from mqt.bench.benchmarks import (
-    ae,
-    bmw_quark_cardinality,
-    bmw_quark_copula,
-    bv,
-    cdkm_ripple_carry_adder,
-    dj,
-    draper_qft_adder,
-    full_adder,
-    ghz,
-    graphstate,
-    grover,
-    half_adder,
-    hhl,
-    hrs_cumulative_multiplier,
-    modular_adder,
-    multiplier,
-    qaoa,
-    qft,
-    qftentangled,
-    qnn,
-    qpeexact,
-    qpeinexact,
-    qwalk,
-    randomcircuit,
-    rg_qft_multiplier,
+    create_circuit,
+    get_available_benchmark_names,
+    register_benchmark,
     shor,
-    vbe_ripple_carry_adder,
-    vqe_real_amp,
-    vqe_su2,
-    vqe_two_local,
-    wstate,
 )
 from mqt.bench.output import (
     MQTBenchExporterError,
@@ -87,59 +53,22 @@ from mqt.bench.output import (
     save_circuit,
     write_circuit,
 )
-from mqt.bench.targets import get_available_devices, get_available_native_gatesets
-
-
-@pytest.fixture
-def output_path() -> str:
-    """Fixture to create the output path for the tests."""
-    output_path = Path("./tests/test_output/")
-    output_path.mkdir(parents=True, exist_ok=True)
-    return str(output_path)
-
-
-@pytest.mark.parametrize(
-    ("benchmark", "input_value"),
-    [
-        (ae, 3),
-        (bv, 3),
-        (cdkm_ripple_carry_adder, 4),
-        (ghz, 2),
-        (dj, 3),
-        (draper_qft_adder, 4),
-        (full_adder, 4),
-        (graphstate, 3),
-        (grover, 3),
-        (half_adder, 3),
-        (hhl, 3),
-        (hrs_cumulative_multiplier, 5),
-        (modular_adder, 2),
-        (multiplier, 4),
-        (qaoa, 3),
-        (qft, 3),
-        (qftentangled, 3),
-        (qnn, 3),
-        (qpeexact, 3),
-        (qpeinexact, 3),
-        (bmw_quark_cardinality, 3),
-        (bmw_quark_copula, 4),
-        (qwalk, 3),
-        (randomcircuit, 3),
-        (rg_qft_multiplier, 4),
-        (vbe_ripple_carry_adder, 4),
-        (vqe_real_amp, 3),
-        (vqe_su2, 3),
-        (vqe_two_local, 3),
-        (wstate, 3),
-        (shor, 18),
-    ],
+from mqt.bench.targets.devices import get_available_device_names, get_device
+from mqt.bench.targets.gatesets import (
+    get_available_gateset_names,
+    get_target_for_gateset,
 )
-def test_quantumcircuit_levels(benchmark: types.ModuleType, input_value: int) -> None:
+
+
+@pytest.mark.parametrize("benchmark_name", get_available_benchmark_names())
+def test_quantumcircuit_levels(benchmark_name: str) -> None:
     """Test the creation of the algorithm level benchmarks for the benchmarks."""
-    qc = benchmark.create_circuit(input_value)
+    input_value = 18 if benchmark_name == "shor" else 5 if benchmark_name == "hrs_cumulative_multiplier" else 4 if benchmark_name in ("bmw_quark_copula", "cdkm_ripple_carry_adder", "draper_qft_adder", "full_adder", "multiplier", "modular_adder", "rg_qft_multiplier", "vbe_ripple_carry_adder") else 3
+
+    qc = create_circuit(benchmark_name, input_value)
     assert isinstance(qc, QuantumCircuit)
     assert qc.num_qubits == input_value
-    assert benchmark.__name__.split(".")[-1] in qc.name
+    assert benchmark_name == qc.name
 
     res_alg = get_benchmark_alg(qc)
     assert res_alg
@@ -149,8 +78,8 @@ def test_quantumcircuit_levels(benchmark: types.ModuleType, input_value: int) ->
     assert res_indep
     assert res_indep.num_qubits == input_value
 
-    if benchmark != shor:
-        for gateset_name in get_available_native_gatesets():
+    if benchmark_name != "shor":
+        for gateset_name in get_available_gateset_names():
             gateset = get_target_for_gateset(gateset_name, num_qubits=qc.num_qubits)
             res_native_gates = get_benchmark_native_gates(
                 qc,
@@ -162,7 +91,8 @@ def test_quantumcircuit_levels(benchmark: types.ModuleType, input_value: int) ->
             assert res_native_gates
             assert res_native_gates.num_qubits == input_value
 
-        for device in get_available_devices().values():
+        for device_name in get_available_device_names():
+            device = get_device(device_name)
             res_mapped = get_benchmark_mapped(
                 qc,
                 None,
@@ -237,23 +167,23 @@ def test_wrong_circuit_size(benchmark: types.ModuleType, input_value: int, kind:
 
 def test_bv() -> None:
     """Test the creation of the BV benchmark."""
-    qc = bv.create_circuit(3)
+    qc = create_circuit("bv", 3)
     assert qc.depth() > 0
     assert qc.num_qubits == 3
     assert "bv" in qc.name
 
-    qc = bv.create_circuit(3, dynamic=True)
+    qc = create_circuit("bv", 3, dynamic=True)
     assert qc.depth() > 0
     assert qc.num_qubits == 3
     assert "bv" in qc.name
 
     with pytest.raises(ValueError, match=r"Length of hidden_string must be num_qubits - 1."):
-        bv.create_circuit(3, hidden_string="wrong")
+        create_circuit("bv", 3, hidden_string="wrong")
 
 
 def test_dj_constant_oracle() -> None:
     """Test the creation of the DJ benchmark constant oracle."""
-    qc = dj.create_circuit(5, False)
+    qc = create_circuit("dj", 5, False)
     assert qc.depth() > 0
 
 
@@ -329,7 +259,8 @@ def test_get_benchmark(
 
 def test_get_benchmark_alg_with_quantum_circuit() -> None:
     """Test get_benchmark method with QuantumCircuit as input for algorithm level benchmarks."""
-    qc = ae.create_circuit(3)
+    qc = create_circuit("ae", 3)
+    assert qc.name == "ae"
     qc_bench = get_benchmark(qc, BenchmarkLevel.ALG)
 
     assert qc == qc_bench
@@ -337,9 +268,20 @@ def test_get_benchmark_alg_with_quantum_circuit() -> None:
 
 def test_get_benchmark_faulty_parameters() -> None:
     """Test the get_benchmark method with faulty parameters."""
-    match = "'wrong_name' is not a supported benchmark. Valid names"
+    match = re.escape(
+        f"'wrong_name' is not a supported benchmark. Available benchmarks: {get_available_benchmark_names()}"
+    )
     with pytest.raises(ValueError, match=match):
         get_benchmark("wrong_name", BenchmarkLevel.INDEP, 6)
+    match = "`circuit_size` cannot be None when `benchmark` is a str."
+    with pytest.raises(ValueError, match=match):
+        get_benchmark(
+            "dj",
+            BenchmarkLevel.INDEP,
+            None,
+            get_device("rigetti_ankaa_84"),
+            1,
+        )
     match = "`circuit_size` must be a positive integer when `benchmark` is a str."
     with pytest.raises(ValueError, match=match):
         get_benchmark(
@@ -349,7 +291,6 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_device("rigetti_ankaa_84"),
             1,
         )
-
     match = "No Shor instance for circuit_size=3. Available: 18, 42, 58, 74."
     with pytest.raises(ValueError, match=match):
         get_benchmark(
@@ -359,7 +300,6 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_device("rigetti_ankaa_84"),
             1,
         )
-
     match = re.escape("Invalid `opt_level` '4'. Must be in the range [0, 3].")
     with pytest.raises(ValueError, match=match):
         get_benchmark(
@@ -369,7 +309,9 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_device("rigetti_ankaa_84"),
             4,
         )
-    match = re.escape(f"Unknown gateset 'wrong_gateset'. Available gatesets: {get_available_gateset_names()}")
+    match = re.escape(
+        "'wrong_gateset' is not a supported gateset. Known modules: ['clifford_t', 'ibm', 'ionq', 'iqm', 'quantinuum', 'rigetti']"
+    )
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",
@@ -378,7 +320,9 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_target_for_gateset("wrong_gateset", 3),
             1,
         )
-    match = re.escape(f"Unknown device 'wrong_device'. Available devices: {get_available_device_names()}")
+    match = re.escape(
+        "'wrong_device' is not a supported device. Known modules: ['ibm', 'ionq', 'iqm', 'quantinuum', 'rigetti']"
+    )
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",
@@ -407,7 +351,7 @@ def test_get_benchmark_faulty_parameters() -> None:
 )
 def test_invalid_circuit_size_combinations(getter: Callable[..., QuantumCircuit]) -> None:
     """All get_benchmark_* helpers must reject the two illegal argument combos."""
-    qc = ae.create_circuit(3)
+    qc = create_circuit("ae", 3)
 
     # QuantumCircuit plus a circuit_size
     with pytest.raises(
@@ -417,12 +361,17 @@ def test_invalid_circuit_size_combinations(getter: Callable[..., QuantumCircuit]
         getter(qc, circuit_size=1)
 
     # str with a bad/absent circuit_size
-    for bad_size in (-1, None):
-        with pytest.raises(
-            ValueError,
-            match=r"`circuit_size` must be a positive integer when `benchmark` is a str",
-        ):
-            getter("ae", circuit_size=bad_size)
+    with pytest.raises(
+        ValueError,
+        match=r"`circuit_size` must be a positive integer when `benchmark` is a str",
+    ):
+        getter("ae", circuit_size=-1)
+
+    with pytest.raises(
+        ValueError,
+        match=r"`circuit_size` cannot be None when `benchmark` is a str",
+    ):
+        getter("ae", circuit_size=None)
 
 
 def test_clifford_t() -> None:
@@ -439,12 +388,6 @@ def test_clifford_t() -> None:
     pm = PassManager(GatesInBasis(target=clifford_t_target))
     pm.run(qc)
     assert pm.property_set["all_gates_in_basis"]
-
-
-def test_get_module_for_benchmark() -> None:
-    """Test the get_module_for_benchmark function."""
-    for benchmark in get_supported_benchmarks():
-        assert get_module_for_benchmark(benchmark.split("-")[0]) is not None
 
 
 def test_benchmark_helper_shor() -> None:
@@ -880,6 +823,48 @@ def test_assert_never_runtime() -> None:
         get_benchmark("qft", level=bad_level, circuit_size=3)
 
 
+def test_dynamic_benchmark_registration() -> None:
+    """A benchmark registered at runtime should immediately be visible through the public helpers."""
+
+    @register_benchmark("dummy_benchmark")
+    def _dummy_factory(num_qubits: int) -> QuantumCircuit:
+        return QuantumCircuit(num_qubits, name="dummy_benchmark")
+
+    names = get_available_benchmark_names()
+    assert "dummy_benchmark" in names
+
+    benchmark = create_circuit("dummy_benchmark", 3)
+    assert benchmark.name == "dummy_benchmark"
+    assert benchmark.num_qubits == 3
+
+    benchmark = create_circuit("dummy_benchmark", 2)
+    assert benchmark.name == "dummy_benchmark"
+    assert benchmark.num_qubits == 2
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"'nonexistent_benchmark' is not a supported benchmark. Available benchmarks: {get_available_benchmark_names()}"
+        ),
+    ):
+        create_circuit("nonexistent_benchmark", 3)
+
+
+def test_duplicate_benchmark_registration() -> None:
+    """Registering the same name twice must raise ValueError."""
+
+    @register_benchmark("dup_benchmark")
+    def _dummy_factory1(num_qubits: int) -> QuantumCircuit:
+        return QuantumCircuit(num_qubits, name=_dummy_factory1.__benchmark_name__)
+
+    # second registration with same name should fail
+    with pytest.raises(ValueError, match="already registered"):
+
+        @register_benchmark("dup_benchmark")
+        def _dummy_factory2(num_qubits: int) -> QuantumCircuit:
+            return QuantumCircuit(num_qubits, name=_dummy_factory2.__benchmark_name__)
+
+
 @pytest.mark.parametrize(
     ("benchmark"),
     ["qaoa", "qnn", "bmw_quark_cardinality", "bmw_quark_copula", "vqe_real_amp", "vqe_su2", "vqe_two_local"],
@@ -893,7 +878,7 @@ def test_benchmarks_with_parameters(benchmark: types.ModuleType) -> None:
     res_indep = get_benchmark(benchmark, level=BenchmarkLevel.INDEP, circuit_size=circuit_size, random_parameters=False)
     assert len(res_indep.parameters) > 0, f"Benchmark {benchmark} should have parameters on the independent level."
 
-    for gateset_name in get_available_native_gatesets():
+    for gateset_name in get_available_gateset_names():
         if gateset_name == "clifford+t":
             continue
         gateset = get_target_for_gateset(gateset_name, num_qubits=qc.num_qubits)
@@ -905,7 +890,8 @@ def test_benchmarks_with_parameters(benchmark: types.ModuleType) -> None:
         assert res_native_gates
         assert res_native_gates.num_qubits == circuit_size
 
-    for device in get_available_devices().values():
+    for device_name in get_available_device_names():
+        device = get_device(device_name)
         res_mapped = get_benchmark_mapped(qc, None, device, 0, random_parameters=False)
         assert res_mapped
         assert len(res_mapped.parameters) > 0, f"Benchmark {benchmark} should have parameters on the mapped level."

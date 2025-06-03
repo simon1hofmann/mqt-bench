@@ -14,10 +14,13 @@ from typing import TYPE_CHECKING
 
 from qiskit.circuit.library import efficient_su2
 
+from ._registry import register_benchmark
+
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit
 
 
+@register_benchmark("vqe_su2")
 def create_circuit(
     num_qubits: int,
     entanglement: str = "reverse_linear",

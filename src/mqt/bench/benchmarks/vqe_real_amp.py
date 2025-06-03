@@ -14,10 +14,13 @@ from typing import TYPE_CHECKING
 
 from qiskit.circuit.library import real_amplitudes
 
+from ._registry import register_benchmark
+
 if TYPE_CHECKING:  # pragma: no cover
     from qiskit.circuit import QuantumCircuit
 
 
+@register_benchmark("vqe_real_amp")
 def create_circuit(num_qubits: int, entanglement: str = "reverse_linear", reps: int = 3) -> QuantumCircuit:
     """Returns a quantum circuit implementing the RealAmplitudes ansatz.
 
