@@ -58,15 +58,14 @@ def create_circuit(num_qubits: int, kind: str = "fixed") -> QuantumCircuit:
 
     qr_a = QuantumRegister(num_state_qubits, name="a")
     qr_b = QuantumRegister(num_state_qubits, name="b")
+    qr_z = QuantumRegister(1, name="cout")
     qc = QuantumCircuit(qr_a, qr_b)
 
     if kind == "half":
-        qr_z = QuantumRegister(1, name="cout")
         qc.add_register(qr_z)
         qr_sum = qr_b[:] + qr_z[:]
         num_qubits_qft = num_state_qubits + 1
     else:
-        qr_z = None
         qr_sum = qr_b[:]
         num_qubits_qft = num_state_qubits
 
