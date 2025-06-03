@@ -20,15 +20,21 @@ from qiskit.circuit import Parameter
 from qiskit.circuit.library.standard_gates import get_standard_gate_name_mapping
 from qiskit.providers.fake_provider import GenericBackendV2
 
-from . import _registry as gateset_registry
-from ._registry import register_gateset
-from .ionq import GPI2Gate, GPIGate, MSGate, ZZGate
-from .rigetti import RXPI2DgGate, RXPI2Gate, RXPIGate
+from ._registry import gateset_names, get_gateset_by_name, register_gateset
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from qiskit.circuit import Gate
     from qiskit.transpiler import Target
+
+_DISCOVERED_MODULES: set[str] = {
+    path.stem
+    for entry in ir.files(__package__).iterdir()
+    if (path := cast("Path", entry)).is_file() and path.suffix == ".py" and not path.stem.startswith("_")
+}
+
+_IMPORTED_MODULES: set[str] = set()
 
 __all__ = [
     "get_available_gateset_names",
@@ -37,44 +43,94 @@ __all__ = [
     "register_gateset",
 ]
 
-for entry in ir.files(__package__).iterdir():
-    if (path := cast("Path", entry)).is_file() and path.suffix == ".py" and not path.stem.startswith("_"):
-        importlib.import_module(f"{__package__}.{path.stem}")
-        __all__ += [f"{path.stem}"]  # noqa: PLE0604
+_SPECIAL_NAME_TO_MODULE = {
+    "clifford+t": "clifford_t",
+    "clifford+t+rotations": "clifford_t",
+}
+
+
+def _module_from_gateset_name(gateset_name: str) -> str:
+    """Map a gateset name like ``ibm_falcon`` to the module ``ibm``.
+
+    The rule is the same as for devices: take everything before the first
+    underscore (``ibm_falcon`` → ``ibm``).  If no underscore is present, the
+    whole name is assumed to be the module.
+    """
+    if gateset_name in _SPECIAL_NAME_TO_MODULE:
+        return _SPECIAL_NAME_TO_MODULE[gateset_name]
+
+    return gateset_name.split("_", 1)[0]
+
+
+def _ensure_loaded(gateset_name: str) -> None:
+    """Import the module that should register gateset_name."""
+    if gateset_name in gateset_names():
+        return  # already present
+
+    module_name = _module_from_gateset_name(gateset_name)
+
+    if module_name not in _DISCOVERED_MODULES:
+        msg = f"'{gateset_name}' is not a supported gateset. Known modules: {sorted(_DISCOVERED_MODULES)}"
+        raise ValueError(msg)
+
+    if module_name not in _IMPORTED_MODULES:
+        importlib.import_module(f"{__package__}.{module_name}")
+        _IMPORTED_MODULES.add(module_name)
+
+    if gateset_name not in gateset_names():
+        msg = (
+            f"Module '{module_name}.py' did not register a gateset called "
+            f"'{gateset_name}'. Available after import: "
+            f"{sorted(gateset_names())}"
+        )
+        raise ValueError(msg)
 
 
 def get_available_gateset_names() -> list[str]:
     """Return a list of available gateset names."""
-    return gateset_registry.gateset_names().copy()
+    for module in _DISCOVERED_MODULES - _IMPORTED_MODULES:
+        importlib.import_module(f"{__package__}.{module}")
+        _IMPORTED_MODULES.add(module)
+
+    return sorted(gateset_names()).copy()
 
 
 @cache
 def _get_gateset(gateset_name: str) -> list[str]:
-    """Internal cacheable function to return the gateset for a given gateset name.
-
-    Arguments:
-        gateset_name: Name of the gateset.
-    """
-    try:
-        return gateset_registry.get_gateset_by_name(gateset_name)
-    except KeyError:
-        msg = f"Unknown gateset '{gateset_name}'. Available gatesets: {get_available_gateset_names()}"
-        raise ValueError(msg) from None
+    """Internal cacheable access. Ensures *lazy* loading."""
+    _ensure_loaded(gateset_name)
+    return get_gateset_by_name(gateset_name)
 
 
 def get_gateset(gateset_name: str) -> list[str]:
-    """Return the gateset for a given gateset name.
+    """Return the basis-gate list for gateset_name."""
+    try:
+        return _get_gateset(gateset_name).copy()
+    except KeyError as exc:
+        msg = f"Unknown gateset '{gateset_name}'. Available gatesets: {get_available_gateset_names()}"
+        raise ValueError(msg) from exc
 
-    Arguments:
-        gateset_name: Name of the gateset.
-    """
-    return _get_gateset(gateset_name).copy()
+
+def _lazy_custom_gates() -> dict[str, Gate]:
+    """Import custom gates only when needed."""
+    from .ionq import GPI2Gate, GPIGate, MSGate, ZZGate  # noqa: PLC0415
+    from .rigetti import RXPI2DgGate, RXPI2Gate, RXPIGate  # noqa: PLC0415
+
+    return {
+        "gpi": lambda: GPIGate(Parameter("alpha")),
+        "gpi2": lambda: GPI2Gate(Parameter("alpha")),
+        "ms": lambda: MSGate(Parameter("alpha"), Parameter("beta"), Parameter("gamma")),
+        "zz": lambda: ZZGate(Parameter("alpha")),
+        "rxpi": RXPIGate,
+        "rxpi2": RXPI2Gate,
+        "rxpi2dg": RXPI2DgGate,
+    }
 
 
 @cache
-def _get_target_for_gateset(name: str, num_qubits: int) -> Target:
+def _get_target_for_gateset(gateset_name: str, num_qubits: int) -> Target:
     """Return the Target object for a given native gateset name."""
-    gates = get_gateset(name)
+    gates = get_gateset(gateset_name)
 
     standard_gates = []
     other_gates = []
@@ -85,29 +141,14 @@ def _get_target_for_gateset(name: str, num_qubits: int) -> Target:
             other_gates.append(gate)
     backend = GenericBackendV2(num_qubits=num_qubits, basis_gates=standard_gates)
     target = backend.target
-    target.description = name
+    target.description = gateset_name
 
-    for gate in other_gates:
-        alpha = Parameter("alpha")
-        beta = Parameter("beta")
-        gamma = Parameter("gamma")
-        if gate == "gpi":
-            target.add_instruction(GPIGate(alpha))
-        elif gate == "gpi2":
-            target.add_instruction(GPI2Gate(alpha))
-        elif gate == "ms":
-            target.add_instruction(MSGate(alpha, beta, gamma))
-        elif gate == "zz":
-            target.add_instruction(ZZGate(alpha))
-        elif gate == "rxpi":
-            target.add_instruction(RXPIGate())
-        elif gate == "rxpi2":
-            target.add_instruction(RXPI2Gate())
-        elif gate == "rxpi2dg":
-            target.add_instruction(RXPI2DgGate())
-        else:
-            msg = f"Gate '{gate}' not found in available gatesets."
-            raise ValueError(msg) from None
+    custom_factory = _lazy_custom_gates()
+    for gate_name in other_gates:
+        if gate_name not in custom_factory:
+            msg = f"Gate '{gate_name}' not found in available custom gates."
+            raise ValueError(msg)
+        target.add_instruction(custom_factory[gate_name]())
 
     return target
 

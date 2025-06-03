@@ -246,7 +246,9 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_device("rigetti_ankaa_84"),
             4,
         )
-    match = re.escape(f"Unknown gateset 'wrong_gateset'. Available gatesets: {get_available_gateset_names()}")
+    match = re.escape(
+        "'wrong_gateset' is not a supported gateset. Known modules: ['clifford_t', 'ibm', 'ionq', 'iqm', 'quantinuum', 'rigetti']"
+    )
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",
@@ -255,7 +257,9 @@ def test_get_benchmark_faulty_parameters() -> None:
             get_target_for_gateset("wrong_gateset", 3),
             1,
         )
-    match = re.escape(f"Unknown device 'wrong_device'. Available devices: {get_available_device_names()}")
+    match = re.escape(
+        "'wrong_device' is not a supported device. Known modules: ['ibm', 'ionq', 'iqm', 'quantinuum', 'rigetti']"
+    )
     with pytest.raises(ValueError, match=match):
         get_benchmark(
             "qpeexact",

@@ -12,10 +12,10 @@ from __future__ import annotations
 
 import importlib
 import importlib.resources as ir
-from typing import TYPE_CHECKING, Any, cast
+from functools import cache
+from typing import TYPE_CHECKING, Any, Callable, cast
 
-from . import _registry as benchmark_registry
-from ._registry import register_benchmark
+from ._registry import benchmark_names, get_benchmark_by_name, register_benchmark
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -28,6 +28,8 @@ _DISCOVERED_BENCHMARKS: set[str] = {
     for entry in ir.files(__package__).iterdir()
     if (path := cast("Path", entry)).is_file() and path.suffix == ".py" and not path.stem.startswith("_")
 }
+
+_IMPORTED_BENCHMARKS: set[str] = set()
 
 __all__ = [
     "create_circuit",
@@ -49,7 +51,7 @@ def _ensure_loaded(benchmark_name: str) -> None:
     Raises:
         ValueError: If the provided benchmark name is not supported or not available in the discovered benchmarks.
     """
-    if benchmark_name in benchmark_registry.benchmark_names():
+    if benchmark_name in benchmark_names():
         return  # already imported and registered
 
     if benchmark_name not in _DISCOVERED_BENCHMARKS:
@@ -58,12 +60,25 @@ def _ensure_loaded(benchmark_name: str) -> None:
         )
         raise ValueError(msg)
 
-    importlib.import_module(f"{__package__}.{benchmark_name}")
+    if benchmark_name not in _IMPORTED_BENCHMARKS:
+        importlib.import_module(f"{__package__}.{benchmark_name}")
+        _IMPORTED_BENCHMARKS.add(benchmark_name)
+
+    if benchmark_name not in benchmark_names():
+        msg = f"Module '{benchmark_name}.py' did not register a benchmark called '{benchmark_name}'."
+        raise ValueError(msg)
 
 
 def get_available_benchmark_names() -> list[str]:
     """Return a list of available benchmark names."""
-    return sorted(_DISCOVERED_BENCHMARKS | set(benchmark_registry.benchmark_names())).copy()
+    return sorted(_DISCOVERED_BENCHMARKS | set(benchmark_names())).copy()
+
+
+@cache
+def _get_factory(benchmark_name: str) -> Callable[..., QuantumCircuit]:
+    """Internal factory that can be cached."""
+    _ensure_loaded(benchmark_name)
+    return get_benchmark_by_name(benchmark_name)
 
 
 # ruff: noqa: ANN401
@@ -92,6 +107,5 @@ def create_circuit(benchmark_name: str, circuit_size: int, /, *args: Any, **kwar
         msg = "`circuit_size` must be a positive integer when `benchmark` is a str."
         raise ValueError(msg)
 
-    _ensure_loaded(benchmark_name)
-    factory = benchmark_registry.get_benchmark_by_name(benchmark_name)
+    factory = _get_factory(benchmark_name)
     return factory(circuit_size, *args, **kwargs)

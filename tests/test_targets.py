@@ -214,8 +214,9 @@ def test_device_spec(spec: DeviceSpec) -> None:
 def test_get_unknown_device() -> None:
     """Requesting an unavailable device must raise *ValueError*."""
     unknown_name = "unknown_device"
-    available = get_available_device_names()
-    pattern = rf"Unknown device '{unknown_name}'. Available devices: {re.escape(str(available))}"
+    pattern = re.escape(
+        f"'{unknown_name}' is not a supported device. Known modules: ['ibm', 'ionq', 'iqm', 'quantinuum', 'rigetti']"
+    )
 
     with pytest.raises(ValueError, match=pattern):
         get_device(unknown_name)
