@@ -77,14 +77,6 @@ def _ensure_loaded(gateset_name: str) -> None:
         importlib.import_module(f"{__package__}.{module_name}")
         _IMPORTED_MODULES.add(module_name)
 
-    if gateset_name not in gateset_names():
-        msg = (
-            f"Module '{module_name}.py' did not register a gateset called "
-            f"'{gateset_name}'. Available after import: "
-            f"{sorted(gateset_names())}"
-        )
-        raise ValueError(msg)
-
 
 def get_available_gateset_names() -> list[str]:
     """Return a list of available gateset names."""

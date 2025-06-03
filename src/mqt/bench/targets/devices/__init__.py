@@ -62,13 +62,6 @@ def _ensure_loaded(device_name: str) -> None:
         importlib.import_module(f"{__package__}.{module_name}")
         _IMPORTED_MODULES.add(module_name)
 
-    if device_name not in device_names():
-        msg = (
-            f"Module '{module_name}.py' did not register a device called '{device_name}'. "
-            f"Available devices: {sorted(device_names())}"
-        )
-        raise ValueError(msg)
-
 
 def get_available_device_names() -> list[str]:
     """Return all registered devices.

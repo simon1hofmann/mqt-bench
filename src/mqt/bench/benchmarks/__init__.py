@@ -64,10 +64,6 @@ def _ensure_loaded(benchmark_name: str) -> None:
         importlib.import_module(f"{__package__}.{benchmark_name}")
         _IMPORTED_BENCHMARKS.add(benchmark_name)
 
-    if benchmark_name not in benchmark_names():
-        msg = f"Module '{benchmark_name}.py' did not register a benchmark called '{benchmark_name}'."
-        raise ValueError(msg)
-
 
 def get_available_benchmark_names() -> list[str]:
     """Return a list of available benchmark names."""
