@@ -52,12 +52,12 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
     qr_a = QuantumRegister(num_state_qubits, name="a")
     qr_b = QuantumRegister(num_state_qubits, name="b")
     qr_out = QuantumRegister(num_result_qubits, name="out")
-    qregs = [qr_a, qr_b, qr_out]
+    qc = QuantumCircuit(qr_a, qr_b, qr_out)
 
-    # build multiplication circuit
-    qc = QuantumCircuit(*qregs)
-
-    qc.append(synth_qft_full(num_result_qubits, do_swaps=False).to_gate(), qr_out[:])
+    qft_circ = synth_qft_full(num_result_qubits, do_swaps=False)
+    qft_gate = qft_circ.to_gate()
+    inv_qft_gate = qft_gate.inverse()
+    qc.append(qft_gate, qr_out)
 
     for j in range(1, num_state_qubits + 1):
         for i in range(1, num_state_qubits + 1):
@@ -69,7 +69,7 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
                     qr_out[k - 1],
                 )
 
-    qc.append(synth_qft_full(num_result_qubits, do_swaps=False).inverse().to_gate(), qr_out[:])
+    qc.append(inv_qft_gate, qr_out)
 
     qc.measure_all()
     qc.name = "rg_qft_multiplier"
