@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 @register_benchmark("vbe_ripple_carry_adder")
 def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
-    """Create a vbe ripple-carry adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/vbe_ripple_carry_adder.py.
+    """Create a vbe ripple-carry adder circuit.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit
@@ -36,6 +36,9 @@ def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
 
     Returns:
            QuantumCircuit: The constructed vbe ripple-carry adder circuit.
+
+    See Also:
+        :class:`qiskit.circuit.library.VBERippleCarryAdder`
     """
     if kind == "half":
         if num_qubits % 3 or num_qubits < 3:

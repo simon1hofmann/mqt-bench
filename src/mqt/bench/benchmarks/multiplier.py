@@ -18,13 +18,16 @@ from ._registry import register_benchmark
 
 @register_benchmark("multiplier")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a multiplier circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/multipliers/multiplier.py.
+    """Create a multiplier circuit.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit, must be divisible by 4.
 
     Returns:
            QuantumCircuit: The constructed multiplier circuit.
+
+    See Also:
+        :class:`qiskit.circuit.library.MultiplierGate`
     """
     if num_qubits % 4 or num_qubits < 4:
         msg = "num_qubits must be an integer ≥ 4 and divisible by 4."

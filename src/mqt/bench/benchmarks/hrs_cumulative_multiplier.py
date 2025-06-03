@@ -32,13 +32,17 @@ from ._registry import register_benchmark
 
 @register_benchmark("hrs_cumulative_multiplier")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a hrs cumulative multiplier circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/multipliers/hrs_cumulative_multiplier.py.
+    """Create a hrs cumulative multiplier circuit.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit, (num_qubits - 1) must be divisible by 4.
 
     Returns:
            QuantumCircuit: The constructed hrs cumulative multiplier circuit.
+
+
+    See Also:
+        :class:`qiskit.circuit.library.HRSCumulativeMultiplier`
     """
     if (num_qubits - 1) % 4 or num_qubits < 5:
         msg = "num_qubits must be an integer ≥ 5 and (num_qubits - 1) must be divisible by 4."

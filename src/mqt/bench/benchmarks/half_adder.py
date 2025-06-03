@@ -18,7 +18,7 @@ from ._registry import register_benchmark
 
 @register_benchmark("half_adder")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a half adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/adder.py.
+    """Create a half adder circuit.
 
     Arguments:
             num_qubits: Number of qubits of the returned quantum circuit, must be odd and bigger than 3
@@ -26,6 +26,9 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
 
     Returns:
            QuantumCircuit: The constructed half adder circuit.
+
+    See Also:
+        :class:`qiskit.circuit.library.HalfAdderGate`
     """
     # Expect one extra qubit for the carry-out bit → total must be odd ≥ 3
     if num_qubits % 2 == 0 or num_qubits < 3:

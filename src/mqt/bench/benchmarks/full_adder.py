@@ -18,7 +18,7 @@ from ._registry import register_benchmark
 
 @register_benchmark("full_adder")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
-    """Create a full adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/adder.py.
+    """Create a full adder circuit.
 
     Arguments:
             num_qubits: number of qubits of the returned quantum circuit, must be even and bigger than 4
@@ -26,6 +26,9 @@ def create_circuit(num_qubits: int) -> QuantumCircuit:
 
     Returns:
            QuantumCircuit: The constructed full adder circuit.
+
+    See Also:
+        :class:`qiskit.circuit.library.FullAdderGate`
     """
     # Expect two extra qubit for the carry-in and carry-out bits → total must be even ≥ 4
     if num_qubits % 2 or num_qubits < 4:
