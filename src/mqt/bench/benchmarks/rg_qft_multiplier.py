@@ -28,7 +28,10 @@ import numpy as np
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 from qiskit.synthesis import synth_qft_full
 
+from ._registry import register_benchmark
 
+
+@register_benchmark("rg_qft_multiplier")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
     """Create a rg qft multiplier circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/multipliers/rg_qft_multiplier.py.
 

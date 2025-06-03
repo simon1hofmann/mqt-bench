@@ -13,7 +13,10 @@ from __future__ import annotations
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit.library import MultiplierGate
 
+from ._registry import register_benchmark
 
+
+@register_benchmark("multiplier")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
     """Create a multiplier circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/multipliers/multiplier.py.
 

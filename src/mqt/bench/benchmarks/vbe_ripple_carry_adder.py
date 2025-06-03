@@ -14,10 +14,13 @@ from typing import TYPE_CHECKING
 
 from qiskit.synthesis import adder_ripple_v95
 
+from ._registry import register_benchmark
+
 if TYPE_CHECKING:
     from qiskit.circuit import QuantumCircuit
 
 
+@register_benchmark("vbe_ripple_carry_adder")
 def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
     """Create a vbe ripple-carry adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/vbe_ripple_carry_adder.py.
 

@@ -27,7 +27,10 @@ from __future__ import annotations
 from qiskit.circuit import AncillaRegister, QuantumCircuit, QuantumRegister
 from qiskit.synthesis import adder_ripple_c04
 
+from ._registry import register_benchmark
 
+
+@register_benchmark("hrs_cumulative_multiplier")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
     """Create a hrs cumulative multiplier circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/multipliers/hrs_cumulative_multiplier.py.
 

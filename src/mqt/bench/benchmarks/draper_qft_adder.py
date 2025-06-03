@@ -28,7 +28,10 @@ import numpy as np
 from qiskit.circuit import QuantumCircuit, QuantumRegister
 from qiskit.synthesis import synth_qft_full
 
+from ._registry import register_benchmark
 
+
+@register_benchmark("draper_qft_adder")
 def create_circuit(num_qubits: int, kind: str = "fixed") -> QuantumCircuit:
     """Create a draper QFT adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/draper_qft_adder.py.
 

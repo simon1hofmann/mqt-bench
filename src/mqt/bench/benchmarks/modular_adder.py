@@ -13,7 +13,10 @@ from __future__ import annotations
 from qiskit.circuit import QuantumCircuit
 from qiskit.circuit.library import ModularAdderGate
 
+from ._registry import register_benchmark
 
+
+@register_benchmark("modular_adder")
 def create_circuit(num_qubits: int) -> QuantumCircuit:
     """Create a modular adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/adder.py.
 

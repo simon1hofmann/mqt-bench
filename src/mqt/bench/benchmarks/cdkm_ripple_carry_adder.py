@@ -14,10 +14,13 @@ from typing import TYPE_CHECKING
 
 from qiskit.synthesis import adder_ripple_c04
 
+from ._registry import register_benchmark
+
 if TYPE_CHECKING:
     from qiskit.circuit import QuantumCircuit
 
 
+@register_benchmark("cdkm_ripple_carry_adder")
 def create_circuit(num_qubits: int, kind: str = "full") -> QuantumCircuit:
     """Create a CDKM ripple-carry adder circuit, see also: https://github.com/Qiskit/qiskit/blob/stable/2.0/qiskit/circuit/library/arithmetic/adders/cdkm_ripple_carry_adder.py.
 
