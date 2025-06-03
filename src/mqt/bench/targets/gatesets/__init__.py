@@ -96,11 +96,7 @@ def _get_gateset(gateset_name: str) -> list[str]:
 
 def get_gateset(gateset_name: str) -> list[str]:
     """Return the basis-gate list for gateset_name."""
-    try:
-        return _get_gateset(gateset_name).copy()
-    except KeyError as exc:
-        msg = f"Unknown gateset '{gateset_name}'. Available gatesets: {get_available_gateset_names()}"
-        raise ValueError(msg) from exc
+    return _get_gateset(gateset_name).copy()
 
 
 def _lazy_custom_gates() -> dict[str, Gate]:
