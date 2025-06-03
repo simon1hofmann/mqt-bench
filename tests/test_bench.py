@@ -59,29 +59,24 @@ from mqt.bench.targets.gatesets import (
     get_target_for_gateset,
 )
 
+SPECIAL_QUBIT_COUNTS: dict[str, int] = {
+    "shor": 18,
+    "hrs_cumulative_multiplier": 5,
+    "bmw_quark_copula": 4,
+    "cdkm_ripple_carry_adder": 4,
+    "draper_qft_adder": 4,
+    "full_adder": 4,
+    "multiplier": 4,
+    "modular_adder": 4,
+    "rg_qft_multiplier": 4,
+    "vbe_ripple_carry_adder": 4,
+}
+
 
 @pytest.mark.parametrize("benchmark_name", get_available_benchmark_names())
 def test_quantumcircuit_levels(benchmark_name: str) -> None:
     """Test the creation of the algorithm level benchmarks for the benchmarks."""
-    input_value = (
-        18
-        if benchmark_name == "shor"
-        else 5
-        if benchmark_name == "hrs_cumulative_multiplier"
-        else 4
-        if benchmark_name
-        in (
-            "bmw_quark_copula",
-            "cdkm_ripple_carry_adder",
-            "draper_qft_adder",
-            "full_adder",
-            "multiplier",
-            "modular_adder",
-            "rg_qft_multiplier",
-            "vbe_ripple_carry_adder",
-        )
-        else 3
-    )
+    input_value = SPECIAL_QUBIT_COUNTS.get(benchmark_name, 3)
 
     qc = create_circuit(benchmark_name, input_value)
     assert isinstance(qc, QuantumCircuit)
@@ -121,66 +116,69 @@ def test_quantumcircuit_levels(benchmark_name: str) -> None:
 
 
 @pytest.mark.parametrize(
-    ("benchmark", "input_value", "kind"),
+    ("benchmark_name", "input_value", "kind"),
     [
-        (cdkm_ripple_carry_adder, 4, "half"),
-        (cdkm_ripple_carry_adder, 4, "full"),
-        (cdkm_ripple_carry_adder, 3, "fixed"),
-        (draper_qft_adder, 3, "half"),
-        (draper_qft_adder, 2, "fixed"),
-        (vbe_ripple_carry_adder, 3, "half"),
-        (vbe_ripple_carry_adder, 4, "full"),
-        (vbe_ripple_carry_adder, 2, "fixed"),
+        ("cdkm_ripple_carry_adder", 4, "half"),
+        ("cdkm_ripple_carry_adder", 4, "full"),
+        ("cdkm_ripple_carry_adder", 3, "fixed"),
+        ("draper_qft_adder", 3, "half"),
+        ("draper_qft_adder", 2, "fixed"),
+        ("vbe_ripple_carry_adder", 3, "half"),
+        ("vbe_ripple_carry_adder", 4, "full"),
+        ("vbe_ripple_carry_adder", 2, "fixed"),
     ],
 )
-def test_adder_circuits(benchmark: types.ModuleType, input_value: int, kind: str) -> None:
+def test_adder_circuits(benchmark_name: str, input_value: int, kind: str) -> None:
     """Test the creation of the arithmetic circuits."""
-    qc = benchmark.create_circuit(input_value, kind)
+    qc = create_circuit(benchmark_name, input_value, kind)
     assert qc.num_qubits == input_value
 
 
 @pytest.mark.parametrize(
-    ("benchmark", "input_value", "kind", "msg"),
+    ("benchmark_name", "input_value", "kind", "msg"),
     [
-        (cdkm_ripple_carry_adder, 5, "half", "num_qubits must be an even integer ≥ 4."),
-        (cdkm_ripple_carry_adder, 3, "full", "num_qubits must be an even integer ≥ 4."),
-        (cdkm_ripple_carry_adder, 4, "fixed", "num_qubits must be an odd integer ≥ 3."),
-        (cdkm_ripple_carry_adder, 4, "unknown_adder", "kind must be 'full', 'half', or 'fixed'."),
-        (draper_qft_adder, 4, "half", "num_qubits must be an odd integer ≥ 3."),
-        (draper_qft_adder, 3, "fixed", "num_qubits must be an even integer ≥ 2."),
-        (draper_qft_adder, 3, "unknown_adder", "kind must be 'half' or 'fixed'."),
-        (full_adder, 5, None, "num_qubits must be an even integer ≥ 4."),
-        (half_adder, 4, None, "num_qubits must be an odd integer ≥ 3."),
+        ("cdkm_ripple_carry_adder", 5, "half", "num_qubits must be an even integer ≥ 4."),
+        ("cdkm_ripple_carry_adder", 3, "full", "num_qubits must be an even integer ≥ 4."),
+        ("cdkm_ripple_carry_adder", 4, "fixed", "num_qubits must be an odd integer ≥ 3."),
+        ("cdkm_ripple_carry_adder", 4, "unknown_adder", "kind must be 'full', 'half', or 'fixed'."),
+        ("draper_qft_adder", 4, "half", "num_qubits must be an odd integer ≥ 3."),
+        ("draper_qft_adder", 3, "fixed", "num_qubits must be an even integer ≥ 2."),
+        ("draper_qft_adder", 3, "unknown_adder", "kind must be 'half' or 'fixed'."),
+        ("full_adder", 5, None, "num_qubits must be an even integer ≥ 4."),
+        ("half_adder", 4, None, "num_qubits must be an odd integer ≥ 3."),
         (
-            hrs_cumulative_multiplier,
+            "hrs_cumulative_multiplier",
             6,
             None,
             re.escape("num_qubits must be an integer ≥ 5 and (num_qubits - 1) must be divisible by 4."),
         ),
-        (modular_adder, 3, None, "num_qubits must be an even integer ≥ 2"),
-        (multiplier, 3, None, "num_qubits must be an integer ≥ 4 and divisible by 4."),
-        (rg_qft_multiplier, 5, None, "num_qubits must be an integer ≥ 4 and divisible by 4."),
-        (vbe_ripple_carry_adder, 4, "half", "num_qubits must be an integer ≥ 3 and divisible by 3."),
+        ("modular_adder", 3, None, "num_qubits must be an even integer ≥ 2"),
+        ("multiplier", 3, None, "num_qubits must be an integer ≥ 4 and divisible by 4."),
+        ("rg_qft_multiplier", 5, None, "num_qubits must be an integer ≥ 4 and divisible by 4."),
+        ("vbe_ripple_carry_adder", 4, "half", "num_qubits must be an integer ≥ 3 and divisible by 3."),
         (
-            vbe_ripple_carry_adder,
+            "vbe_ripple_carry_adder",
             3,
             "full",
             re.escape("num_qubits must be an integer ≥ 4 and (num_qubits - 1) must be divisible by 3."),
         ),
         (
-            vbe_ripple_carry_adder,
+            "vbe_ripple_carry_adder",
             4,
             "fixed",
             re.escape("num_qubits must be an integer ≥ 2 and (num_qubits + 1) must be divisible by 3."),
         ),
-        (vbe_ripple_carry_adder, 3, "unknown_adder", "kind must be 'full', 'half', or 'fixed'."),
+        ("vbe_ripple_carry_adder", 3, "unknown_adder", "kind must be 'full', 'half', or 'fixed'."),
     ],
 )
-def test_wrong_circuit_size(benchmark: types.ModuleType, input_value: int, kind: str | None, msg: str) -> None:
+def test_wrong_circuit_size(benchmark_name: str, input_value: int, kind: str | None, msg: str) -> None:
     """Test the creation of the arithmetic circuits with faulty input values."""
-    params = (input_value,) + (() if kind is None else (kind,))
+    params = (
+        benchmark_name,
+        input_value,
+    ) + (() if kind is None else (kind,))
     with pytest.raises(ValueError, match=msg):
-        benchmark.create_circuit(*params)
+        create_circuit(*params)
 
 
 def test_bv() -> None:
