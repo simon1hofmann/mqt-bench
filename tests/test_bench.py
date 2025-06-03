@@ -63,7 +63,25 @@ from mqt.bench.targets.gatesets import (
 @pytest.mark.parametrize("benchmark_name", get_available_benchmark_names())
 def test_quantumcircuit_levels(benchmark_name: str) -> None:
     """Test the creation of the algorithm level benchmarks for the benchmarks."""
-    input_value = 18 if benchmark_name == "shor" else 5 if benchmark_name == "hrs_cumulative_multiplier" else 4 if benchmark_name in ("bmw_quark_copula", "cdkm_ripple_carry_adder", "draper_qft_adder", "full_adder", "multiplier", "modular_adder", "rg_qft_multiplier", "vbe_ripple_carry_adder") else 3
+    input_value = (
+        18
+        if benchmark_name == "shor"
+        else 5
+        if benchmark_name == "hrs_cumulative_multiplier"
+        else 4
+        if benchmark_name
+        in (
+            "bmw_quark_copula",
+            "cdkm_ripple_carry_adder",
+            "draper_qft_adder",
+            "full_adder",
+            "multiplier",
+            "modular_adder",
+            "rg_qft_multiplier",
+            "vbe_ripple_carry_adder",
+        )
+        else 3
+    )
 
     qc = create_circuit(benchmark_name, input_value)
     assert isinstance(qc, QuantumCircuit)

@@ -36,7 +36,6 @@ class BenchmarkLevel(Enum):
     MAPPED = auto()
 
 
-
 def _get_circuit(
     benchmark: str | QuantumCircuit,
     circuit_size: int | None,
