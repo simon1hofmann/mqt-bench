@@ -17,10 +17,17 @@ from typing import TYPE_CHECKING
 import pytest
 from qiskit.transpiler import Target
 
-from mqt.bench.targets.devices import get_available_device_names, get_device, register_device
+from mqt.bench.targets.devices import (
+    _module_from_device_name,  # noqa: PLC2701
+    get_available_device_names,
+    get_device,
+    register_device,
+)
 from mqt.bench.targets.gatesets import (
+    _module_from_gateset_name,  # noqa: PLC2701
     get_available_gateset_names,
     get_gateset,
+    get_target_for_gateset,
     register_gateset,
 )
 
@@ -256,6 +263,9 @@ def test_dynamic_gateset_registration() -> None:
     gateset = get_gateset("dummy_gateset")
     assert gateset == ["dummy_gate"]
 
+    with pytest.raises(ValueError, match=re.escape("Gate 'dummy_gate' not found in available custom gates.")):
+        get_target_for_gateset("dummy_gateset", 2)
+
 
 def test_duplicate_device_registration() -> None:
     """Registering the same name twice must raise ValueError."""
@@ -318,3 +328,23 @@ def test_get_gateset_immutability() -> None:
 
     gateset_names2 = get_available_gateset_names()
     assert "dummy_gatesetname" not in gateset_names2
+
+
+@pytest.mark.parametrize(
+    ("gateset_name", "module_name"),
+    [
+        ("rigetti", "rigetti"),
+        ("ionq_aria", "ionq"),
+        ("clifford+t", "clifford_t"),
+        ("clifford+t+rotations", "clifford_t"),
+    ],
+)
+def test_module_from_gateset_name(gateset_name: str, module_name: str) -> None:
+    """Test module name extraction from gateset name."""
+    assert _module_from_gateset_name(gateset_name) == module_name
+
+
+@pytest.mark.parametrize(("device_name", "module_name"), [("rigetti_ankaa_84", "rigetti"), ("ionq_aria_25", "ionq")])
+def test_module_from_device_name(device_name: str, module_name: str) -> None:
+    """Test module name extraction from device name."""
+    assert _module_from_device_name(device_name) == module_name
