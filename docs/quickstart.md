@@ -53,6 +53,117 @@ qc_mapped_level = get_benchmark(
     level=BenchmarkLevel.MAPPED,
     circuit_size=5,
     target=get_device("ionq_forte_36"),
+    opt_level=2,
 )
 qc_mapped_level.draw(output="mpl")
+```
+
+## Mirror Circuits
+
+```{code-cell} ipython3
+qc_mirrored = get_benchmark(
+    benchmark="ghz",
+    level=BenchmarkLevel.MAPPED,
+    circuit_size=3,
+    target=get_device("ibm_falcon_27"),
+    opt_level=0,
+    # generate_mirror_circuit=True,
+)
+qc_mirrored.draw(output="mpl")
+```
+
+## Self-defined Circuits
+
+```{code-cell} ipython3
+from qiskit import QuantumCircuit
+
+qc = QuantumCircuit(2)
+qc.h(0)
+qc.cx(0, 1)
+
+qc_circuit = get_benchmark(benchmark=qc, level=BenchmarkLevel.NATIVEGATES, target=get_device("ionq_forte_36"))
+qc_circuit.draw(output="mpl")
+```
+
+## Self-defined Targets
+
+```{code-cell} ipython3
+from qiskit.providers.fake_provider import GenericBackendV2
+
+standard_gates = ["id", "x", "sx", "rz", "cx"]
+backend = GenericBackendV2(num_qubits=5, basis_gates=standard_gates)
+target = backend.target
+target.description = "Awesome Target"
+
+qc_target = get_benchmark(
+    benchmark="dj",
+    level=BenchmarkLevel.NATIVEGATES,
+    circuit_size=5,
+    target=target,
+    opt_level=2,
+)
+qc_target.draw(output="mpl")
+```
+
+## Random and Symbolic Parameters
+
+### Random Parameters (Default)
+
+```{code-cell} ipython3
+qc_random = get_benchmark(benchmark="qaoa", level=BenchmarkLevel.ALG, circuit_size=2)
+qc_random.draw(output="mpl")
+```
+
+### Symbolic Parameters
+
+```{code-cell} ipython3
+qc_symbolic = get_benchmark(benchmark="qaoa", level=BenchmarkLevel.ALG, circuit_size=2, random_parameters=False)
+qc_symbolic.draw(output="mpl")
+```
+
+## Output Formats
+
+### QASM2
+
+```{code-cell} ipython3
+from pathlib import Path
+from mqt.bench.output import (
+    OutputFormat,
+    save_circuit,
+)
+
+qc = QuantumCircuit(2)
+qc.h(0)
+qc.cx(0, 1)
+
+save_circuit(qc, "qasm2", BenchmarkLevel.INDEP, output_format=OutputFormat.QASM2)
+text_qasm2 = Path("qasm2.qasm").read_text()
+print(text_qasm2)
+Path("qasm2.qasm").unlink()
+```
+
+### QASM3
+
+```{code-cell} ipython3
+qc = QuantumCircuit(2)
+qc.h(0)
+qc.cx(0, 1)
+
+save_circuit(qc, "qasm3", BenchmarkLevel.INDEP, output_format=OutputFormat.QASM3)
+text_qasm3 = Path("qasm3.qasm").read_text()
+print(text_qasm3)
+Path("qasm3.qasm").unlink()
+```
+
+### QPY
+
+```{code-cell} ipython3
+qc = QuantumCircuit(2)
+qc.h(0)
+qc.cx(0, 1)
+
+save_circuit(qc, "qpy", BenchmarkLevel.INDEP, output_format=OutputFormat.QPY)
+text_qpy = Path("qpy.qpy").read_bytes()
+print(text_qpy)
+Path("qpy.qpy").unlink()
 ```
