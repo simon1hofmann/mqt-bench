@@ -78,7 +78,7 @@ qc_mirrored.draw(output="mpl")
 
 ## Self-defined Circuits
 
-Sometimes you want to benchmark a circuit that you designed yourself. You can create a `qiskit.QuantumCircuit`, pass it directly to `get_benchmark`, and let `mqt.bench` compile it for your chosen target backend.
+Sometimes you want to derive benchmark circuits from an original circuit that you created yourself. You can create a `qiskit.QuantumCircuit`, pass it directly to `get_benchmark`, and let `mqt.bench` compile it for your chosen target backend.
 
 ```{code-cell} ipython3
 from qiskit import QuantumCircuit
@@ -115,7 +115,7 @@ qc_target.draw(output="mpl")
 
 ## Random and Symbolic Parameters
 
-Benchmarks such as QAOA require sets of real parameters. `mqt.bench can either choose random numeric values for you (default) or leave the parameters symbolic so that you can optimize them later.
+Variational benchmarks such as QAOA require sets of real parameters. MQT Bench can either choose random numeric values for you (default) or leave the parameters symbolic so that you can optimize them later.
 
 ### Random Parameters (Default)
 
