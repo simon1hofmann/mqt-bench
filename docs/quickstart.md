@@ -45,6 +45,8 @@ qc_native_gates_level = get_benchmark(
 qc_native_gates_level.draw(output="mpl")
 ```
 
+(mapped-level)=
+
 ## Target-dependent Mapped Level
 
 ```{code-cell} ipython3
@@ -60,7 +62,7 @@ qc_mapped_level.draw(output="mpl")
 
 ## Mirror Circuits
 
-Mirror circuits replicate a given benchmark circuit and its mirror image (inverse) concatenated together. This is useful for performance benchmarking because the ideal final state is known (all qubits should return to their initial state), making deviations easy to detect.
+Mirror circuits replicate a given benchmark circuit and its mirror image (inverse) concatenated together. This is useful for performance benchmarking because the ideal final state is known (all qubits should return to their initial state), making deviations easy to detect. Here, we mirror the circuit obtained in the {ref}`mapped-level` section.
 
 ```{code-cell} ipython3
 qc_mirrored = get_benchmark(
