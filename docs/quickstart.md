@@ -78,7 +78,7 @@ qc_mirrored.draw(output="mpl")
 
 ## Self-defined Circuits
 
-Sometimes you want to derive benchmark circuits from an original circuit that you created yourself. You can create a `qiskit.QuantumCircuit`, pass it directly to `get_benchmark`, and let `mqt.bench` compile it for your chosen target backend.
+Sometimes you want to derive benchmark circuits from an original circuit that you created yourself. You can create a `qiskit.QuantumCircuit`, pass it directly to `get_benchmark`, and let MQT Bech compile it for your chosen target backend.
 
 ```{code-cell} ipython3
 from qiskit import QuantumCircuit
