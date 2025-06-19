@@ -139,9 +139,13 @@ qc_symbolic.draw(output="mpl")
 
 The `save_circuit` function lets you export circuits in several industry‑standard formats so that they can be run or analyzed by other tools.
 
-### QASM2
+### OpenQASM2
 
 ```{code-cell} ipython3
+---
+mystnb:
+  text_lexer: 'qasm2'
+---
 from pathlib import Path
 from mqt.bench.output import (
     OutputFormat,
@@ -158,9 +162,13 @@ print(text_qasm2)
 Path("qasm2.qasm").unlink()
 ```
 
-### QASM3
+### OpenQASM3
 
 ```{code-cell} ipython3
+---
+mystnb:
+  text_lexer: 'qasm3'
+---
 qc = QuantumCircuit(2)
 qc.h(0)
 qc.cx(0, 1)
@@ -179,7 +187,5 @@ qc.h(0)
 qc.cx(0, 1)
 
 save_circuit(qc, "qpy", BenchmarkLevel.INDEP, output_format=OutputFormat.QPY)
-text_qpy = Path("qpy.qpy").read_bytes()
-print(text_qpy)
 Path("qpy.qpy").unlink()
 ```
