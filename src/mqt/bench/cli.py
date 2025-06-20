@@ -68,6 +68,13 @@ def main() -> None:
         help="Target name for native gates and mapped level (e.g., 'ibm_falcon' or 'ibm_washington').",
     )
     parser.add_argument(
+        "--random-parameters",
+        dest="random_parameters",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Whether to assign random parameters to parametric circuits (default: True). Use --no-random-parameters to disable.",
+    )
+    parser.add_argument(
         "--output-format",
         type=str,
         choices=[fmt.value for fmt in OutputFormat],
@@ -111,6 +118,7 @@ def main() -> None:
         circuit_size=args.num_qubits,
         target=target,
         opt_level=args.optimization_level,
+        random_parameters=args.random_parameters,
     )
 
     try:
