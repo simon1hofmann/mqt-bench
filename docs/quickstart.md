@@ -71,7 +71,7 @@ qc_mirrored = get_benchmark(
     circuit_size=5,
     target=get_device("ionq_forte_36"),
     opt_level=2,
-    # generate_mirror_circuit=True,
+    generate_mirror_circuit=True,
 )
 qc_mirrored.draw(output="mpl")
 ```
