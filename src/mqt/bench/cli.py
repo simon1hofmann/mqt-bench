@@ -92,6 +92,11 @@ def main() -> None:
         action="store_true",
         help="If set, save the output to a file instead of printing to stdout (e.g. for 'qpy', which is not available as text).",
     )
+    parser.add_argument(
+        "--mirror",
+        action="store_true",
+        help="If set, generate the mirror version of the benchmark (circuit @ circuit.inverse()).",
+    )
 
     args = parser.parse_args()
 
@@ -118,6 +123,7 @@ def main() -> None:
         circuit_size=args.num_qubits,
         target=target,
         opt_level=args.optimization_level,
+        generate_mirror_circuit=args.mirror,
         random_parameters=args.random_parameters,
     )
 
@@ -139,6 +145,7 @@ def main() -> None:
         num_qubits=args.num_qubits,
         target=target,
         opt_level=args.optimization_level,
+        generate_mirror_circuit=args.mirror,
     )
     success = save_circuit(
         qc=circuit,
