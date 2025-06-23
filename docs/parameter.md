@@ -25,9 +25,7 @@ print(get_available_benchmark_names())
 ```
 
 - `level`: BenchmarkLevel.ALG, BenchmarkLevel.INDEP, BenchmarkLevel.NATIVEGATES, BenchmarkLevel.MAPPED
-- `circuit_size`: for most of the cases this is equal to number of qubits
-  (all scalable benchmarks except `"qwalk-v-chain"` and `"grover-v-chain"`) while for all other the qubit number is higher
-
+- `circuit_size`: Define the number of qubits in the circuit.
 - `target`: Target, which can also be instantiated based on gatesets using `get_target_for_gateset(gateset_name)` or based on a device using `get_device(device_name)`.
   Possible values for `gateset_name`:
 
@@ -51,7 +49,7 @@ print(get_available_device_names())
 
 (required for "mapped" level)
 
-- `opt_level`: Optimization level for `"qiskit"` (`0`-`3`)
+- `opt_level`: Optimization level for `"qiskit"` (`0`-`3`).
 - `random_parameters`: Assign random parameters to the circuit's parameters if they exist.
 - `generate_mirror_circuit`: Generate the mirror version (U @ U.inverse()) of the benchmark.
 

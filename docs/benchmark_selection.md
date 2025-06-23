@@ -28,7 +28,27 @@ df = pd.DataFrame(
     ]
 )
 
-HTML(df.to_html(index=False, escape=False))
+def dark_even_rows(s):
+    return ['background-color:#262626;color:#f8f8f8' if s.name % 2 else '' for _ in s]
+
+html = (
+    df.style
+      .apply(dark_even_rows, axis=1)                         # zebra rows
+      .set_table_styles([
+          # index cells in zebra rows
+          {'selector': 'tr:nth-child(even) th',
+           'props': [('background-color','#262626'),
+                     ('color','#f8f8f8')]},
+
+          # entire header row
+          {'selector': 'thead th',
+           'props': [('background-color','#3b3b3b'),
+                     ('color','#f8f8f8')]}
+      ], overwrite=False)
+      .to_html()
+)
+
+HTML(html)
 ```
 
 See the [benchmark description](https://www.cda.cit.tum.de/mqtbench/benchmark_description) for further details on the individual benchmarks.
