@@ -18,7 +18,7 @@
 # MQT Bench - Benchmarking Software and Design Automation Tools for Quantum Computing
 
 MQT Bench is a quantum circuit benchmark suite with cross-level support, i.e., providing the same benchmark algorithms for different abstraction levels throughout the quantum computing software stack.
-MQT Bench is hosted at [https://www.cda.cit.tum.de/mqtbench/](https://www.cda.cit.tum.de/mqtbench/).
+MQT Bench is hosted at [https://mqt-bench.app/](https://mqt-bench.app/).
 It is part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.readthedocs.io).
 
 <p align="center">
@@ -29,7 +29,7 @@ It is part of the [_Munich Quantum Toolkit (MQT)_](https://mqt.readthedocs.io).
 
 ## Key Features
 
-- **Comprehensive Quantum Benchmark Suite:** Provides a wide range of quantum circuit benchmarks, including algorithms such as GHZ, QAOA, QFT, Grover, Shor, and many more. [List of benchmarks](https://www.cda.cit.tum.de/mqtbench/benchmark_description)
+- **Comprehensive Quantum Benchmark Suite:** Provides a wide range of quantum circuit benchmarks, including algorithms such as GHZ, QAOA, QFT, Grover, Shor, and many more. [List of benchmarks](https://mqt.readthedocs.io/projects/bench/en/latest/benchmark_selection.html)
 - **Cross-Level Benchmark Generation:** Supports four abstraction levels—algorithmic, target-independent, target-dependent native gates, and target-dependent mapped—enabling benchmarking across the entire quantum software stack. [Abstraction levels](https://mqt.readthedocs.io/projects/bench/en/latest/abstraction_levels.html)
 - **Flexible Target and Gateset Support:** Generate circuits for various hardware targets and native gatesets, including IBM, IonQ, Quantinuum, Rigetti, and more. [Supported devices and gatesets](https://mqt.readthedocs.io/projects/bench/en/latest/parameter.html)
 - **Python API, CLI, and Web Interface:** Use MQT Bench programmatically via Python, from the command line, or through an interactive web interface—whichever fits your workflow. [Usage guide](https://mqt.readthedocs.io/projects/bench/en/latest/usage.html)
