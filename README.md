@@ -127,7 +127,7 @@ When citing the software itself or results produced with it, cite the MQT Bench 
   volume       = {7},
   pages        = {1062},
   doi          = {10.22331/q-2023-07-20-1062},
-  note         = {{{MQT Bench}} is available at \url{https://www.cda.cit.tum.de/mqtbench/}},
+  note         = {{{MQT Bench}} is available at \url{https://mqt-bench.app/}},
   eprint       = {2204.13719},
   eprinttype   = {arxiv}
 }
